@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema<UserSchema>(
       unique: true,
       trim: true,
       lowercase: true,
-      validate(value) {
+      validate(value:any) {
         if (!validator.isEmail(value)) {
           throw new Error("Invalid email");
         }
@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema<UserSchema>(
       trim: true,
       minlength: 8,
       maxlength: 16,
-      validate(value) {
+      validate(value:any) {
         if (!value.match(/\d/) || !value.match(/[a-zA-Z]/)) {
           throw new Error(
             "Password must contain at least one letter and one number",
@@ -58,12 +58,12 @@ const userSchema = new mongoose.Schema<UserSchema>(
   },
 );
 
-userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
+userSchema.statics.isEmailTaken = async function (email:string, excludeUserId) {
   const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
   return !!user;
 };
 
-userSchema.methods.isPasswordMatch = async function (password) {
+userSchema.methods.isPasswordMatch = async function (password:any) {
   const user = this;
   return bcrypt.compare(password, user.password);
 };

@@ -7,6 +7,7 @@ import { errorConverter, errorHandler } from "./middlewares/error";
 import config from "./config/config";
 import morgan from "./config/morgan";
 import { authLimiter } from "./middlewares/rateLimiter";
+import router from "./routes/auth.route";
 
 const app: Application = express();
 
@@ -33,6 +34,7 @@ app.use(cors(corsOptions));
 if (config.env === "production") {
   app.use("/v1/auth", authLimiter);
 }
+app.use("/v1/auth", router)
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
   next(new ApiError(httpStatus.NOT_FOUND, "Not found"));
