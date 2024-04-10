@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
-import { createUser } from "../services/user";
+import { createUser } from "../services/user.service";
 
 const register = catchAsync(async (req,res)=>{
     const user = await createUser(req.body);
