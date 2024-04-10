@@ -19,7 +19,8 @@ const createTenant = catchAsync(async (req, res) => {
     db_password: password,
   };
   await db("tenants").insert(tenant);
-  await tenantService.up({ tenantName, password, uuid })
+  await tenantService.up({ tenantName, password, uuid });
+  res.status(httpStatus.OK).send({ tenant: { ...tenant } });
 });
 
 export default { createTenant };
