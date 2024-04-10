@@ -1,10 +1,10 @@
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
-import { createUser } from "../services/user";
+import { userService } from "../services";
 
-const register = catchAsync(async (req,res)=>{
-    const user = await createUser(req.body);
-    res.status(httpStatus.CREATED).send({user})
-})
+const register = catchAsync(async (req, res) => {
+  const user = await userService.createUser(req.body);
+  res.status(httpStatus.CREATED).send({ user });
+});
 
-export {register}
+export default { register };

@@ -7,19 +7,19 @@ import { errorConverter, errorHandler } from "./middlewares/error";
 import config from "./config/config";
 import morgan from "./config/morgan";
 import { authLimiter } from "./middlewares/rateLimiter";
-import router from "./routes/auth.route";
+import { router } from "./routes";
+import logger from "./config/logger";
 
 const app: Application = express();
+
+const BASE_URL = `/api/${process.env.VERSION || "v1"}`;
 
 if (config.env !== "test") {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
 
-app.set("port", config.port || 8000);
-
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
 app.use(compression());
@@ -28,13 +28,13 @@ const corsOptions = {
   origin: "http://localhost:3000",
   credentials: true,
 };
-
 app.use(cors(corsOptions));
 
 if (config.env === "production") {
-  app.use("/v1/auth", authLimiter);
+  app.use(`${BASE_URL}/auth`, authLimiter);
 }
-app.use("/v1/auth", router)
+
+app.use(BASE_URL, router);
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
   next(new ApiError(httpStatus.NOT_FOUND, "Not found"));
