@@ -2,7 +2,6 @@ import Queue from 'bull';
 import { db } from '../config/databse';
 import { connectionService } from './index';
 
-
 interface Params {
   tenantName: string;
   password: string;
@@ -55,4 +54,4 @@ const down = async (params: Params): Promise<void> => {
   });
 };
 
-export { up, down };
+export default { up, down };
