@@ -55,4 +55,4 @@ const getTenantConnection = (uuid: string) => {
   return tenant.connection;
 };
 
-export { bootstrap, getTenantConnection, getConnection };
+export default { bootstrap, getTenantConnection, getConnection };

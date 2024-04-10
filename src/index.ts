@@ -1,14 +1,14 @@
 import { app } from "./app";
 import logger from "./config/logger";
 import config from "./config/config";
-import { bootstrap } from "./services/connection.service";
+import { connectionService } from "./services";
 
 let server: any;
 
 const startServer = async () => {
   try {
-    await bootstrap();
-    logger.info("Connected Successfully")
+    await connectionService.bootstrap();
+    logger.info("Connected Successfully");
     server = app.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);
     });
