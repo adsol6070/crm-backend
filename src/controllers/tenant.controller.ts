@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import generator from "generate-password";
 import slugify from "slugify";
 import { db } from "../config/databse";
+import { tenantService } from "../services";
 
 const createTenant = catchAsync(async (req, res) => {
   const { organization } = req.body;
@@ -18,6 +19,8 @@ const createTenant = catchAsync(async (req, res) => {
     db_password: password,
   };
   await db("tenants").insert(tenant);
+  await tenantService.up({ tenantName, password, uuid });
+  res.status(httpStatus.OK).send({ tenant: { ...tenant } });
 });
 
 export default { createTenant };

@@ -1,7 +1,7 @@
 import Queue from 'bull';
 import { db } from '../config/databse';
 import { connectionService } from './index';
-
+import config from '../config/config';
 
 interface Params {
   tenantName: string;
@@ -12,7 +12,7 @@ interface Params {
 const up = async (params: Params): Promise<void> => {
   const job = new Queue(
     `setting-up-database-${new Date().getTime()}`,
-    `redis://127.0.0.1:6379`
+    `redis://${config.redis.host}:${config.redis.port}`
   );
   job.add({ ...params });
   job.process(async (job, done) => {
@@ -23,7 +23,7 @@ const up = async (params: Params): Promise<void> => {
       await db.raw(`GRANT ALL PRIVILEGES ON DATABASE ${params.tenantName} TO ${params.tenantName};`);
 
       await connectionService.bootstrap();
-      const tenant = connectionService.getTenantConnection(params.uuid);
+      await connectionService.getTenantConnection(params.uuid);
       done();
     } catch (e) {
       console.error(e);
@@ -55,4 +55,4 @@ const down = async (params: Params): Promise<void> => {
   });
 };
 
-export { up, down };
+export default { up, down };
