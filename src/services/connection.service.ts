@@ -1,6 +1,7 @@
-import knex from 'knex';
-import { getNamespace } from 'continuation-local-storage';
-import { db, dbConfiguration } from '../config/databse';
+import knex from "knex";
+import { getNamespace } from "continuation-local-storage";
+import { db, dbConfiguration } from "../config/databse";
+import createTenantTable from "../models/tenant.model";
 
 interface Tenant {
   uuid: string;
@@ -17,30 +18,36 @@ interface TenantConnection {
 let tenantMapping: TenantConnection[] = [];
 
 const getConfig = (tenant: Tenant) => {
-  const { db_username: user, db_name: database, db_password: password } = tenant;
-  
+  const {
+    db_username: user,
+    db_name: database,
+    db_password: password,
+  } = tenant;
+
   return {
     ...dbConfiguration,
     connection: {
       ...dbConfiguration.connection,
       user,
       database,
-      password
-    }
+      password,
+    },
   };
 };
 
-const getConnection = (): any | null => getNamespace('tenants')?.get('connection') || null;
+const getConnection = (): any | null =>
+  getNamespace("tenants")?.get("connection") || null;
 
 const bootstrap = async () => {
   try {
+    await createTenantTable();
     const tenants: Tenant[] = await db
-      .select('uuid', 'db_name', 'db_username', 'db_password')
-      .from('tenants');
+      .select("uuid", "db_name", "db_username", "db_password")
+      .from("tenants");
 
     tenantMapping = tenants.map((tenant) => ({
       uuid: tenant.uuid,
-      connection: knex(getConfig(tenant))
+      connection: knex(getConfig(tenant)),
     }));
   } catch (error) {
     console.error(error);
