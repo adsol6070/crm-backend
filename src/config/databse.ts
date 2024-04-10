@@ -1,22 +1,7 @@
 import knex from "knex"
+import config from "./config"
 
-const config = {
-  // client: process.env.DB_CLIENT,
-  client: "pg",
-  connection: {
-    // user: process.env.DB_USER,
-    user: 'postgres',
-    // host: process.env.DB_HOST,
-    host: 'localhost',
-    port: process.env.DB_PORT,
-    // database: process.env.DB_DATABASE,
-    database: 'demo',
-    // password: process.env.DB_PASSWORD
-    password: 'admin'
-  },
-  pool: { min: 2, max: 10 }
-}
+const dbConfiguration = config.postgres
+const db = knex(dbConfiguration)
 
-const db = knex(config)
-
-export { db, config }
+export { db, dbConfiguration }

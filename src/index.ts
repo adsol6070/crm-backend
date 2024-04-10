@@ -1,15 +1,14 @@
-import mongoose from "mongoose";
 import { app } from "./app";
 import logger from "./config/logger";
 import config from "./config/config";
+import { bootstrap } from "./services/connection.service";
 
 let server: any;
 
 const startServer = async () => {
   try {
-    await mongoose.connect(config.mongoose.url);
-    logger.info("Connected to MongoDB");
-
+    await bootstrap();
+    logger.info("Connected Successfully")
     server = app.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);
     });

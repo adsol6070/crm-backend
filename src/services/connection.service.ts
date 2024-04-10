@@ -1,6 +1,6 @@
 import knex from 'knex';
 import { getNamespace } from 'continuation-local-storage';
-import { db, config } from '../config/databse';
+import { db, dbConfiguration } from '../config/databse';
 
 interface Tenant {
   uuid: string;
@@ -20,9 +20,9 @@ const getConfig = (tenant: Tenant) => {
   const { db_username: user, db_name: database, db_password: password } = tenant;
   
   return {
-    ...config,
+    ...dbConfiguration,
     connection: {
-      ...config.connection,
+      ...dbConfiguration.connection,
       user,
       database,
       password
