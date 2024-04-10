@@ -1,26 +1,28 @@
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
-import { v4 as uuidv4 } from "uuid";
-import generator from "generate-password";
-import slugify from "slugify";
-import { db } from "../config/databse";
-import { tenantService } from "../services";
+import initializeUserModel from "../models/user.model";
+import { dbConfiguration } from "../config/databse";
+
+const userModel = initializeUserModel(dbConfiguration);
 
 const createUser = catchAsync(async (req, res) => {
-  const { organization } = req.body;
+  const { name, email, password, role } = req.body;
 
-  const tenantName = slugify(organization.toLowerCase(), "_");
-  const password = generator.generate({ length: 12, numbers: true });
-  const uuid = uuidv4();
-  const tenant = {
-    uuid,
-    db_name: tenantName,
-    db_username: tenantName,
-    db_password: password,
-  };
-  await db("tenants").insert(tenant);
-  await tenantService.up({ tenantName, password, uuid });
-  res.status(httpStatus.OK).send({ tenant: { ...tenant } });
+  try {
+    // Check if the email is already taken
+    const emailTaken = await userModel.isEmailTaken(email);
+    if (emailTaken) {
+      return res.status(httpStatus.BAD_REQUEST).send("Email is already taken");
+    }
+
+    // Create the user
+    await userModel.createUser(name, email, password, role);
+
+    res.status(httpStatus.CREATED).send("User created successfully");
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).send("An error occurred while creating the user");
+  }
 });
 
 export default { createUser };
