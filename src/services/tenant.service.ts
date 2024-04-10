@@ -1,6 +1,7 @@
 import Queue from 'bull';
 import { db } from '../config/databse';
-import { bootstrap, getTenantConnection } from './connection.service';
+import { connectionService } from './index';
+
 
 interface Params {
   tenantName: string;
@@ -21,8 +22,8 @@ const up = async (params: Params): Promise<void> => {
       await db.raw(`CREATE DATABASE ${params.tenantName} WITH OWNER ${params.tenantName};`);
       await db.raw(`GRANT ALL PRIVILEGES ON DATABASE ${params.tenantName} TO ${params.tenantName};`);
 
-      await bootstrap();
-      const tenant = getTenantConnection(params.uuid);
+      await connectionService.bootstrap();
+      const tenant = connectionService.getTenantConnection(params.uuid);
       done();
     } catch (e) {
       console.error(e);
@@ -46,7 +47,7 @@ const down = async (params: Params): Promise<void> => {
       );
       await db.raw(`DROP DATABASE IF EXISTS ${params.tenantName};`);
       await db.raw(`DROP ROLE IF EXISTS ${params.tenantName};`);
-      await bootstrap();
+      await connectionService.bootstrap();
       done();
     } catch (e) {
       console.error(e);
