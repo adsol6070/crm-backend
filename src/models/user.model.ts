@@ -6,7 +6,9 @@ interface UserModel {
   isEmailTaken(email: string, excludeUserId?: string): Promise<boolean>;
   isPasswordMatch(password: string, hashedPassword: string): Promise<boolean>;
   createUser(
-    name: string,
+    tenantID: string,
+    firstname: string,
+    lastname: string,
     email: string,
     password: string,
     role?: string,
@@ -19,6 +21,7 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
   dbConnection.schema
     .createTableIfNotExists("users", function (table: Knex.CreateTableBuilder) {
       table.increments("id").primary();
+      table.uuid("tenantID").notNullable();
       table.string("firstname").notNullable();
       table.string("lastname").notNullable();
       table.string("email").notNullable().unique();
@@ -61,6 +64,7 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
     },
 
     async createUser(
+      tenantID: string,
       name: string,
       email: string,
       password: string,
@@ -76,6 +80,7 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
           phone: "", // You can add phone number handling if needed
           profileImage: "user",
           isEmailVerified: false,
+          tenantID,
           role,
         });
       } catch (error) {

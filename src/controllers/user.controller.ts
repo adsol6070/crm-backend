@@ -2,10 +2,11 @@ import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
 import initializeUserModel from "../models/user.model";
 import { dbConfiguration } from "../config/databse";
+import logger from "../config/logger";
 
-const userModel = initializeUserModel(dbConfiguration);
 
 const createUser = catchAsync(async (req, res) => {
+  const userModel = initializeUserModel(dbConfiguration);
   const { name, email, password, role } = req.body;
 
   try {
@@ -20,7 +21,7 @@ const createUser = catchAsync(async (req, res) => {
 
     res.status(httpStatus.CREATED).send("User created successfully");
   } catch (error) {
-    console.error("Error creating user:", error);
+    logger.error("Error creating user:", error);
     res.status(httpStatus.INTERNAL_SERVER_ERROR).send("An error occurred while creating the user");
   }
 });
