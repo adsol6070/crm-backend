@@ -2,7 +2,6 @@ import { app } from "./app";
 import logger from "./config/logger";
 import config from "./config/config";
 import { connectionService } from "./services";
-import createTenantTable from "./models/tenant.model";
 
 let server: any;
 

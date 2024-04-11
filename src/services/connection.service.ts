@@ -1,7 +1,7 @@
 import knex from "knex";
 import { getNamespace } from "continuation-local-storage";
 import { db, dbConfiguration } from "../config/databse";
-import createTenantTable from "../models/tenant.model";
+import createTenantTable from "../migrations/tenant.table";
 
 interface Tenant {
   uuid: string;
