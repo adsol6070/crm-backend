@@ -11,7 +11,7 @@ const defaultRoutes = [
   {
     path: "/tenant",
     route: tenantRoute,
-  },
+  }
 ];
 
 defaultRoutes.forEach((route) => {

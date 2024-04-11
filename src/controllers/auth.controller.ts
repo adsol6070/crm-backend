@@ -1,10 +1,14 @@
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
-import { userService } from "../services";
+import initializeUserModel from "../models/user.model";
+import logger from "../config/logger";
+import { connectionService } from "../services";
 
-const register = catchAsync(async (req, res) => {
-  const user = await userService.createUser(req.body);
-  res.status(httpStatus.CREATED).send({ user });
+const registerUser = catchAsync(async (req, res) => {
+  const connection = await connectionService.getConnection();
+  const userModel = initializeUserModel(connection);
+  logger.info(userModel);
+  res.send(httpStatus.CREATED).json({ message: "Ok" });
 });
 
-export default { register };
+export default { registerUser };
