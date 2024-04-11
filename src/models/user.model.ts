@@ -6,7 +6,8 @@ interface UserModel {
   isEmailTaken(email: string, excludeUserId?: string): Promise<boolean>;
   isPasswordMatch(password: string, hashedPassword: string): Promise<boolean>;
   createUser(
-    name: string,
+    firstname: string,
+    lastname: string,
     email: string,
     password: string,
     role?: string,
@@ -15,27 +16,30 @@ interface UserModel {
 }
 
 const initializeUserModel = (dbConnection: Knex): UserModel => {
-  // Define the user table schema if it doesn't exist
-  dbConnection.schema
-    .createTableIfNotExists("users", function (table: Knex.CreateTableBuilder) {
-      table.increments("id").primary();
-      table.string("firstname").notNullable();
-      table.string("lastname").notNullable();
-      table.string("email").notNullable().unique();
-      table.string("phone").notNullable();
-      table.string("profileImage").defaultTo("user");
-      table.boolean("isEmailVerified").defaultTo(false);
-      table.timestamps(true, true); // Adds created_at and updated_at columns
-    })
-    .then(() => {
-      console.log("User table created successfully");
-    })
-    .catch((error: any) => {
+  const createUsersTable = async (): Promise<void> => {
+    try {
+      await dbConnection.schema.createTableIfNotExists(
+        "users",
+        function (table: Knex.CreateTableBuilder) {
+          table.increments("id").primary();
+          table.uuid("tenantId");
+          table.string("firstname").notNullable();
+          table.string("lastname").notNullable();
+          table.string("email").notNullable().unique();
+          table.string("phone").notNullable();
+          table.string("profileImage");
+          table.boolean("isEmailVerified").defaultTo(false);
+          table.timestamps(true, true);
+        },
+      );
+    } catch (error) {
       logger.error("Error creating user table:", error);
-      throw error; // Terminate execution if table creation fails
-    });
+      throw error;
+    }
+  };
 
-  // Define the UserModel functions
+  createUsersTable();
+
   const userModel: UserModel = {
     async isEmailTaken(
       email: string,
@@ -61,7 +65,8 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
     },
 
     async createUser(
-      name: string,
+      firstname: string,
+      lastname: string,
       email: string,
       password: string,
       role: string = "user",
@@ -69,17 +74,17 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
       try {
         const hashedPassword = await bcrypt.hash(password, 8);
         await dbConnection("users").insert({
-          firstname: name.split(" ")[0], // Assuming name format is "Firstname Lastname"
-          lastname: name.split(" ")[1], // Splitting name into firstname and lastname
+          firstname,
+          lastname,
           email,
           password: hashedPassword,
-          phone: "", // You can add phone number handling if needed
+          phone: "",
           profileImage: "user",
           isEmailVerified: false,
           role,
         });
       } catch (error) {
-        console.error("Error creating user:", error);
+        logger.error("Error creating user:", error);
         throw error;
       }
     },
