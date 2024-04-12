@@ -2,6 +2,7 @@ import Queue from 'bull';
 import { db } from '../config/databse';
 import { connectionService } from './index';
 import config from '../config/config';
+import { migrate } from '../migrations';
 
 interface Params {
   tenantName: string;
@@ -23,7 +24,8 @@ const up = async (params: Params): Promise<void> => {
       await db.raw(`GRANT ALL PRIVILEGES ON DATABASE ${params.tenantName} TO ${params.tenantName};`);
 
       await connectionService.bootstrap();
-      await connectionService.getTenantConnection(params.uuid);
+      const tenant = await connectionService.getTenantConnection(params.uuid);
+      await migrate(tenant);
       done();
     } catch (e) {
       console.error(e);

@@ -1,31 +1,52 @@
-// import httpStatus from "http-status";
-// import catchAsync from "../utils/catchAsync";
-// import initializeUserModel from "../models/user.model";
-// import { dbConfiguration } from "../config/databse";
+import bcrypt from "bcryptjs";
+import { Knex } from "knex";
+import ApiError from "../utils/ApiError";
+import httpStatus from "http-status";
 
-// // Initialize user model
-// const userModel = initializeUserModel(dbConfiguration);
+interface DatabaseError extends Error {
+  code?: string;
+}
 
-// // createUser function to handle user creation requests
-// const createUser = catchAsync(async (req, res, next) => {
-//   const { name, email, password, role } = req.body;
+interface User {
+  tenantID: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  password: string;
+  phone: string;
+  isEmailVerified: boolean;
+  role: string;
+}
 
-//   try {
-//     // Check if the email is already taken
-//     const emailTaken = await userModel.isEmailTaken(email);
-//     if (emailTaken) {
-//       return res.status(httpStatus.BAD_REQUEST).send("Email is already taken");
-//     }
+const createUser = async (connection: Knex, user: User) => {
+  try {
+    const hashedPassword = await bcrypt.hash(user.password, 8);
+    const insertedUser = {
+      tenantID: user.tenantID,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      email: user.email,
+      password: hashedPassword,
+      phone: user.phone,
+      isEmailVerified: false,
+      role: user.role,
+    };
+    await connection("users").insert(insertedUser);
+    return insertedUser;
+  } catch (error: DatabaseError | any) {
+    throw new ApiError(httpStatus.BAD_REQUEST, error.message);
+  }
+};
 
-//     // Create the user
-//     await userModel.createUser({ tenantId, firstname, name, email, password, role });
+const getUserByEmail = async (
+  connection: Knex,
+  email: string,
+): Promise<any> => {
+  try {
+    return await connection("users").where({ email }).first();
+  } catch (error: DatabaseError | any) {
+    throw new ApiError(httpStatus.BAD_REQUEST, error.message);
+  }
+};
 
-//     res.status(httpStatus.CREATED).send("User created successfully");
-//   } catch (error) {
-//     console.error("Error creating user:", error);
-//     res.status(httpStatus.INTERNAL_SERVER_ERROR).send("An error occurred while creating the user");
-//   }
-// });
-
-
-// export default { createUser };
+export default { createUser, getUserByEmail };
