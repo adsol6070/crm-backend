@@ -8,7 +8,7 @@ const registerUser = catchAsync(async (req, res) => {
   const connection = await connectionService.getConnection();
   const userModel = initializeUserModel(connection);
   logger.info(userModel);
-  res.send(httpStatus.CREATED).json({ message: "Ok" });
+  res.status(httpStatus.CREATED).json({ message: "Ok" });
 });
 
 export default { registerUser };

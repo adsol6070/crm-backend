@@ -19,7 +19,9 @@ interface UserModel {
 const initializeUserModel = (dbConnection: Knex): UserModel => {
   const createUsersTable = async (): Promise<void> => {
     try {
-      await dbConnection.schema.createTableIfNotExists(
+      const tableExists = await dbConnection.schema.hasTable("users");
+    if (!tableExists) {
+      await dbConnection.schema.createTable(
         "users",
         function (table: Knex.CreateTableBuilder) {
           table.increments("id").primary();
@@ -33,6 +35,8 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
           table.timestamps(true, true);
         },
       );
+      logger.info("Tenant table created successfully");
+    }
     } catch (error) {
       logger.error("Error creating user table:", error);
       throw error;
