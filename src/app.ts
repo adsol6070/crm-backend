@@ -9,6 +9,7 @@ import morgan from "./config/morgan";
 import { authLimiter } from "./middlewares/rateLimiter";
 import { router } from "./routes";
 import logger from "./config/logger";
+import formidableMiddleware from "express-formidable";
 
 const app: Application = express();
 
@@ -19,6 +20,7 @@ if (config.env !== "test") {
   app.use(morgan.errorHandler);
 }
 
+app.use(formidableMiddleware());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
