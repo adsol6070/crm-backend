@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 const registerUser = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getConnection();
   const user = await userService.createUser(connection, req.body);
-  res.send(httpStatus.CREATED).json({ user });
+  res.status(httpStatus.CREATED).json({ user });
 });
 
 export default { registerUser };

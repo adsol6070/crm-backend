@@ -6,8 +6,6 @@ import httpStatus from "http-status";
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
-        console.log("Request data in destination:", req.body); // Logs the request body
-
         const tenantId = req.body.tenantID;
         const uploadPath = path.join(__dirname, "..", "uploads", tenantId);
 
@@ -15,9 +13,6 @@ const storage = multer.diskStorage({
         callback(null, uploadPath);
     },
     filename: (req, file, callback) => {
-        console.log("Request data in filename:", req.body); // Logs the request body
-        console.log("File data:", file); // Logs the file data
-
         callback(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
     },
 });
@@ -26,8 +21,6 @@ const upload = multer({
     storage,
     limits: { fileSize: 1000000 },
     fileFilter: (req, file, callback) => {
-        console.log("Filtering file:", file); // Logs the file being processed
-
         const filetypes = /jpeg|jpg|png|gif/;
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = filetypes.test(file.mimetype);

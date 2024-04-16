@@ -5,6 +5,6 @@ import upload from "../middlewares/multer";
 
 const router = express.Router();
 
-router.post("/register", upload.single("profileImage") , connectionRequest, authController.registerUser);
+router.post("/register", upload.single("profileImage"), connectionRequest, authController.registerUser);
 
 export default router;
