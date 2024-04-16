@@ -11,9 +11,11 @@ const createUsersTable = async (tenant: Knex): Promise<void> => {
         table.string("firstname").notNullable();
         table.string("lastname").notNullable();
         table.string("email").notNullable().unique();
+        table.string("password").notNullable();
         table.string("phone").notNullable();
         table.string("profileImage");
         table.boolean("isEmailVerified").defaultTo(false);
+        table.string("role").notNullable();
         table.timestamps(true, true);
       },
     );

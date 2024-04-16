@@ -33,6 +33,7 @@ const createUser = async (connection: Knex, user: User) => {
       isEmailVerified: false,
       role: user.role,
     };
+
     await connection("users").insert(insertedUser);
     return insertedUser;
   } catch (error: DatabaseError | any) {
