@@ -30,8 +30,9 @@ const initializeUserModel = (dbConnection: Knex): UserModel => {
           table.string("lastname").notNullable();
           table.string("email").notNullable().unique();
           table.string("phone").notNullable();
-          table.string("profileImage");
+          table.string("profileImage").notNullable();
           table.boolean("isEmailVerified").defaultTo(false);
+          table.string("role").notNullable();
           table.timestamps(true, true);
         },
       );

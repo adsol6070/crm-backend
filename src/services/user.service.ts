@@ -14,20 +14,22 @@ interface User {
   email: string;
   password: string;
   phone: string;
+  profileImage: string;
   isEmailVerified: boolean;
   role: string;
 }
 
 const createUser = async (connection: Knex, user: User) => {
   try {
-    const hashedPassword = await bcrypt.hash(user.password, 8);
+    // const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
       tenantID: user.tenantID,
       firstname: user.firstname,
       lastname: user.lastname,
       email: user.email,
-      password: hashedPassword,
+      // password: hashedPassword,
       phone: user.phone,
+      profileImage: user.profileImage,
       isEmailVerified: false,
       role: user.role,
     };
