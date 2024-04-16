@@ -7,11 +7,7 @@ import ApiError from "../utils/ApiError";
 const namespace = createNamespace("tenants");
 
 const connectionRequest = (req: Request, res: Response, next: NextFunction) => {
-
-  console.table(req.fields);
-  console.log(req.files);
-
-  const tenantId = req.body.tenantID;
+  const tenantId: string = String(req.fields?.tenantID);
 
   // Check if tenantID is present
   if (!tenantId) {

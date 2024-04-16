@@ -9,7 +9,9 @@ import morgan from "./config/morgan";
 import { authLimiter } from "./middlewares/rateLimiter";
 import { router } from "./routes";
 import logger from "./config/logger";
-import formidableMiddleware from "express-formidable";
+import formidable from "express-formidable";
+import path from "path";
+import fs from "fs"
 
 const app: Application = express();
 
@@ -20,9 +22,24 @@ if (config.env !== "test") {
   app.use(morgan.errorHandler);
 }
 
-app.use(formidableMiddleware());
+const uploadDir = path.join(__dirname, 'uploads');
+
+// Ensure the upload directory exists
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true }); // Creates the directory if it does not exist
+}
+
+// Formidable Middleware Configuration
+app.use(formidable({
+    encoding: 'utf-8',
+    uploadDir: uploadDir,
+    keepExtensions: true,
+    multiples: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 app.use(compression());
 
