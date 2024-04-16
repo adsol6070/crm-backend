@@ -14,6 +14,7 @@ interface User {
   email: string;
   password: string;
   phone: string;
+  profileImage: string;
   isEmailVerified: boolean;
   role: string;
 }
@@ -28,9 +29,11 @@ const createUser = async (connection: Knex, user: User) => {
       email: user.email,
       password: hashedPassword,
       phone: user.phone,
+      profileImage: user.profileImage,
       isEmailVerified: false,
       role: user.role,
     };
+
     await connection("users").insert(insertedUser);
     return insertedUser;
   } catch (error: DatabaseError | any) {
