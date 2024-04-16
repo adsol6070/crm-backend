@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const knex_1 = __importDefault(require("knex"));
 const continuation_local_storage_1 = require("continuation-local-storage");
 const databse_1 = require("../config/databse");
-const tenant_model_1 = __importDefault(require("../models/tenant.model"));
+const tenant_table_1 = __importDefault(require("../migrations/tenant.table"));
 let tenantMapping = [];
 const getConfig = (tenant) => {
     const { db_username: user, db_name: database, db_password: password, } = tenant;
@@ -26,7 +26,7 @@ const getConfig = (tenant) => {
 const getConnection = () => { var _a; return ((_a = (0, continuation_local_storage_1.getNamespace)("tenants")) === null || _a === void 0 ? void 0 : _a.get("connection")) || null; };
 const bootstrap = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield (0, tenant_model_1.default)();
+        yield (0, tenant_table_1.default)();
         const tenants = yield databse_1.db
             .select("uuid", "db_name", "db_username", "db_password")
             .from("tenants");

@@ -15,9 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../utils/catchAsync"));
 const services_1 = require("../services");
-const registerUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const connection = yield services_1.connectionService.getConnection();
     const user = yield services_1.userService.createUser(connection, req.body);
     res.status(http_status_1.default.CREATED).json({ user });
 }));
-exports.default = { registerUser };
+exports.default = { createUser };

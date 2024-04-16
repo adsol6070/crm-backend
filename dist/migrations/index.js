@@ -12,12 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const http_status_1 = __importDefault(require("http-status"));
-const catchAsync_1 = __importDefault(require("../utils/catchAsync"));
-const services_1 = require("../services");
-const registerUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const connection = yield services_1.connectionService.getConnection();
-    const user = yield services_1.userService.createUser(connection, req.body);
-    res.status(http_status_1.default.CREATED).json({ user });
-}));
-exports.default = { registerUser };
+exports.migrate = void 0;
+const users_table_1 = __importDefault(require("./users.table"));
+const migrate = (tenant) => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, users_table_1.default)(tenant);
+});
+exports.migrate = migrate;

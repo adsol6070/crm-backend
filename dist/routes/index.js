@@ -17,7 +17,7 @@ const defaultRoutes = [
     {
         path: "/tenant",
         route: tenant_route_1.default,
-    },
+    }
 ];
 defaultRoutes.forEach((route) => {
     router.use(route.path, route.route);

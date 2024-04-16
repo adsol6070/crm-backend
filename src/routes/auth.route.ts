@@ -1,4 +1,4 @@
-import express, { request } from "express";
+import express from "express";
 import { authController } from "../controllers";
 import { connectionRequest } from "../middlewares/connectionResolver";
 import upload from "../middlewares/multer";
