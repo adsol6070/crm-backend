@@ -4,7 +4,8 @@ import { connectionService, userService } from "../services";
 
 const createUser = catchAsync(async (req, res) => {
   const connection = await connectionService.getConnection();
-  const user = await userService.createUser(connection, req.body);
+  const uploadFile = req.file as any
+  const user = await userService.createUser(connection, req.body, uploadFile);
   res.status(httpStatus.CREATED).json({ user });
 });
 

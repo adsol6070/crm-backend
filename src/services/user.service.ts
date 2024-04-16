@@ -18,8 +18,18 @@ interface User {
   isEmailVerified: boolean;
   role: string;
 }
+interface File {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  destination: string;
+  filename: string;
+  path: string;
+  size: number;
+}
 
-const createUser = async (connection: Knex, user: User) => {
+const createUser = async (connection: Knex, user: User, file: File) => {
   try {
     const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
@@ -29,7 +39,7 @@ const createUser = async (connection: Knex, user: User) => {
       email: user.email,
       password: hashedPassword,
       phone: user.phone,
-      profileImage: user.profileImage,
+      profileImage: file.filename,
       isEmailVerified: false,
       role: user.role,
     };
