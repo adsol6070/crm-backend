@@ -7,7 +7,9 @@ import ApiError from "../utils/ApiError";
 const namespace = createNamespace("tenants");
 
 const connectionRequest = (req: Request, res: Response, next: NextFunction) => {
-  const tenantId: string = String(req.fields?.tenantID);
+  const tenantId = req.body.tenantID;
+
+    console.table(req.body)
 
   // Check if tenantID is present
   if (!tenantId) {
