@@ -5,8 +5,9 @@ import generator from "generate-password";
 import slugify from "slugify";
 import { db } from "../config/databse";
 import { tenantService } from "../services";
+import { Request, Response } from "express";
 
-const createTenant = catchAsync(async (req, res) => {
+const createTenant = catchAsync(async (req: Request, res: Response) => {
   const { organization } = req.body;
 
   const tenantName = slugify(organization.toLowerCase(), "_");

@@ -12,11 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../utils/catchAsync"));
 const uuid_1 = require("uuid");
 const generate_password_1 = __importDefault(require("generate-password"));
 const slugify_1 = __importDefault(require("slugify"));
 const databse_1 = require("../config/databse");
+const services_1 = require("../services");
 const createTenant = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { organization } = req.body;
     const tenantName = (0, slugify_1.default)(organization.toLowerCase(), "_");
@@ -29,5 +31,7 @@ const createTenant = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         db_password: password,
     };
     yield (0, databse_1.db)("tenants").insert(tenant);
+    yield services_1.tenantService.up({ tenantName, password, uuid });
+    res.status(http_status_1.default.OK).send({ tenant: Object.assign({}, tenant) });
 }));
 exports.default = { createTenant };

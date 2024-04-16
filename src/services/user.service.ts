@@ -19,7 +19,19 @@ interface User {
   role: string;
 }
 
-const createUser = async (connection: Knex, user: User) => {
+interface UploadedFile {
+  fieldname: string; // Field name specified in the form
+  originalname: string; // Original file name on the user's computer
+  encoding: string; // Encoding type of the file
+  mimetype: string; // Mime type of the file
+  destination: string; // Folder to which the file has been saved
+  filename: string; // The name of the file within the destination
+  path: string; // The full path to the uploaded file
+  size: number; // The size of the file in bytes
+}
+
+
+const createUser = async (connection: Knex, user: User, file: UploadedFile) => {
   try {
     const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
@@ -29,7 +41,7 @@ const createUser = async (connection: Knex, user: User) => {
       email: user.email,
       password: hashedPassword,
       phone: user.phone,
-      profileImage: user.profileImage,
+      profileImage: file.filename,
       isEmailVerified: false,
       role: user.role,
     };
