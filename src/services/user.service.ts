@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Knex } from "knex";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
+import commonService from "./common.service";
 
 interface DatabaseError extends Error {
   code?: string;
@@ -33,6 +34,10 @@ interface UploadedFile {
 
 const createUser = async (connection: Knex, user: User, file: UploadedFile) => {
   try {
+    const emailTaken = await commonService.isEmailTaken(connection, user.email);
+    if(emailTaken){
+      throw new ApiError(httpStatus.BAD_REQUEST, "User Already Registered");
+    }
     const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
       tenantID: user.tenantID,
@@ -45,7 +50,6 @@ const createUser = async (connection: Knex, user: User, file: UploadedFile) => {
       isEmailVerified: false,
       role: user.role,
     };
-
     await connection("users").insert(insertedUser);
     return insertedUser;
   } catch (error: DatabaseError | any) {

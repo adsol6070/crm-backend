@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
-import { connectionService, userService } from "../services";
+import { connectionService, authService, userService, tokenService } from "../services";
 import { Request, Response } from "express";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
@@ -10,4 +10,12 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.CREATED).json({ user });
 });
 
-export default { registerUser };
+const loginUser = catchAsync(async(req:Request, res: Response)=>{
+  const {email, password} = req.body;
+  const connection = await connectionService.getConnection();
+  const user = await authService.loginWithEmailAndPassword(connection, email, password)
+  await tokenService.generateAuthToken(user)
+  res.status(httpStatus.OK).json(user)
+})
+
+export default { registerUser, loginUser};
