@@ -2,13 +2,13 @@ import express, { Request, Response, NextFunction, Application } from "express";
 import cors from "cors";
 import compression from "compression";
 import httpStatus from "http-status";
+
 import ApiError from "./utils/ApiError";
 import { errorConverter, errorHandler } from "./middlewares/error";
 import config from "./config/config";
 import morgan from "./config/morgan";
 import { authLimiter } from "./middlewares/rateLimiter";
 import { router } from "./routes";
-import logger from "./config/logger";
 
 const app: Application = express();
 
@@ -21,7 +21,6 @@ if (config.env !== "test") {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(compression());
 
 const corsOptions = {

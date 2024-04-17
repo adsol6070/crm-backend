@@ -20,6 +20,8 @@ interface EnvironmentVariables {
   POSTGRES_ROLE: string;
   REDIS_PORT: number;
   REDIS_HOST: string;
+  JWT_ACCESS_SECRET: string;
+  ACCESS_TOKEN_EXPIRY: number;
 }
 
 // Define the schema for validating environment variables
@@ -35,6 +37,10 @@ const envVarsSchema = Joi.object<EnvironmentVariables>({
   POSTGRES_ROLE: Joi.string().required().description("Postgres role"),
   REDIS_PORT: Joi.number().default(6379).description("Redis port"),
   REDIS_HOST: Joi.string().default("localhost").description("Redis host"),
+  JWT_ACCESS_SECRET: Joi.string().required().description("JWT secret key"),
+  ACCESS_TOKEN_EXPIRY: Joi.number()
+    .required()
+    .description("Seconds after which access token expires"),
 }).unknown();
 
 // Validate and extract environment variables
@@ -58,14 +64,18 @@ const config = {
       host: envVars.DB_HOST,
       port: envVars.DB_PORT,
       database: envVars.DB_DATABASE,
-      password: envVars.DB_PASSWORD
+      password: envVars.DB_PASSWORD,
     },
-    pool: { min: 2, max: 10 }
+    pool: { min: 2, max: 10 },
   },
-  redis:{
+  redis: {
     host: envVars.REDIS_HOST,
-    port: envVars.REDIS_PORT
-  }
+    port: envVars.REDIS_PORT,
+  },
+  jwt: {
+    secret: envVars.JWT_ACCESS_SECRET,
+    accessExpirationTime: envVars.ACCESS_TOKEN_EXPIRY,
+  },
 };
 
 // Export the configuration object
