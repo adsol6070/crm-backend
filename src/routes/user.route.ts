@@ -1,9 +1,18 @@
-import  express  from "express";
+import express from "express";
 import { auth } from "../middlewares/auth";
-import userController from "../controllers/user.controller";
+import { userController } from "../controllers";
+import { connectionRequest } from "../middlewares/connectionResolver";
+import upload from "../middlewares/multer";
 
 const router = express.Router();
 
-router.route("/").post(auth("manageUsers"), userController.createUser)
+router
+  .route("/")
+  .post(
+    auth("manageUsers"),
+    upload.single("profileImage"),
+    connectionRequest,
+    userController.createUser,
+  );
 
 export default router;
