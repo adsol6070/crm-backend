@@ -1,5 +1,6 @@
 import express from "express";
 import authRoute from "./auth.route";
+import userRoute from "./user.route";
 import tenantRoute from "./tenant.route";
 
 const router = express.Router();
@@ -9,9 +10,13 @@ const defaultRoutes = [
     route: authRoute,
   },
   {
+    path: "/users",
+    route: userRoute,
+  },
+  {
     path: "/tenant",
     route: tenantRoute,
-  }
+  },
 ];
 
 defaultRoutes.forEach((route) => {

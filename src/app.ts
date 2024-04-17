@@ -9,6 +9,8 @@ import config from "./config/config";
 import morgan from "./config/morgan";
 import { authLimiter } from "./middlewares/rateLimiter";
 import { router } from "./routes";
+import passport from "passport";
+import { jwtStrategy } from "./config/passport";
 
 const app: Application = express();
 
@@ -28,6 +30,9 @@ const corsOptions = {
   credentials: true,
 };
 app.use(cors(corsOptions));
+
+app.use(passport.initialize());
+passport.use("jwt", jwtStrategy);
 
 if (config.env === "production") {
   app.use(`${BASE_URL}/auth`, authLimiter);
