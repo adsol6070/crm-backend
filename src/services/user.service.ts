@@ -31,12 +31,10 @@ interface UploadedFile {
   size: number; // The size of the file in bytes
 }
 
-
 const createUser = async (connection: Knex, user: User, file: UploadedFile) => {
   try {
-    const emailTaken = await commonService.isEmailTaken(connection, user.email);
-    if(emailTaken){
-      throw new ApiError(httpStatus.BAD_REQUEST, "User Already Registered");
+    if (await commonService.isEmailTaken(connection, user.email)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
@@ -62,7 +60,8 @@ const getUserByEmail = async (
   email: string,
 ): Promise<any> => {
   try {
-    return await connection("users").where({ email }).first();
+    const findedUser = await connection("users").where({ email }).first();
+    return findedUser;
   } catch (error: DatabaseError | any) {
     throw new ApiError(httpStatus.BAD_REQUEST, error.message);
   }

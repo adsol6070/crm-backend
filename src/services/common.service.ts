@@ -3,19 +3,17 @@ import bcrypt from "bcryptjs";
 
 const isEmailTaken = async (
   connection: Knex,
-  email: string
+  email: string,
 ): Promise<boolean> => {
-    const user = await connection("users")
-      .where({ email })
-      .first();
-    return !!user;
+  const user = await connection("users").where({ email }).first();
+  return !!user;
 };
 
-const isPasswordMatch = (
+const isPasswordMatch = async (
   password: string,
   hashedPassword: string,
 ): Promise<boolean> => {
-  return bcrypt.compare(password, hashedPassword);
+  return await bcrypt.compare(password, hashedPassword);
 };
 
 export default { isEmailTaken, isPasswordMatch };
