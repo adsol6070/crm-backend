@@ -19,8 +19,8 @@ interface User {
 const generateToken = (userId: string, expires:string, type:string, secret:string)=>{
     const payload = {
         sub: userId,
-        iat: Date.now(),
-        exp: ,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + expires,
         type
     }
 }
