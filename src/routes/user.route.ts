@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { auth } from "../middlewares/auth";
 import { userController } from "../controllers";
 import { connectionRequest } from "../middlewares/connectionResolver";

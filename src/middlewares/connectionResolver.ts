@@ -27,7 +27,6 @@ const namespace = createNamespace("tenants");
 
 const connectionRequest = (req: Request, res: Response, next: NextFunction) => {
   const tenantId = req.body.tenantID || req.user?.tenantID;
-
   // Check if tenantID is present
   if (!tenantId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Tenant ID is required");
