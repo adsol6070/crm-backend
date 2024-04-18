@@ -17,7 +17,7 @@ const createUsersTable = async (tenant: Knex): Promise<void> => {
         table.string("phone").notNullable();
         table.string("profileImage");
         table.boolean("isEmailVerified").defaultTo(false);
-        table.string("role").notNullable();
+        table.enum("role", ["user", "admin", "superAdmin"]).defaultTo("user");
         table.timestamps(true, true);
       },
     );

@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-// import mongoose from "mongoose";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import config from "../config/config";
@@ -14,7 +13,7 @@ const errorConverter = (
   let error: any = err;
   if (!(error instanceof ApiError)) {
     const statusCode =
-      error.statusCode /* || error instanceof mongoose.Error */
+      error.statusCode || (error as any).sqlState
         ? httpStatus.BAD_REQUEST
         : httpStatus.INTERNAL_SERVER_ERROR;
     const message = error.message || httpStatus[statusCode];
