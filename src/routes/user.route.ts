@@ -15,4 +15,8 @@ router
     userController.createUser,
   );
 
+router
+  .route("/:userId")
+  .get(auth("getUsers"), connectionRequest, userController.getUser);
+
 export default router;

@@ -9,15 +9,15 @@ interface DatabaseError extends Error {
 }
 
 interface User {
-  tenantID: string;
+  tenantID?: string;
   firstname: string;
   lastname: string;
   email: string;
   password: string;
   phone: string;
-  profileImage: string;
-  isEmailVerified: boolean;
-  role: string;
+  profileImage?: string;
+  isEmailVerified?: boolean;
+  role?: string;
 }
 
 interface UploadedFile {
@@ -31,22 +31,27 @@ interface UploadedFile {
   size: number; // The size of the file in bytes
 }
 
-const createUser = async (connection: Knex, user: User, file: UploadedFile) => {
+const createUser = async (
+  connection: Knex,
+  user: User,
+  tenantID?: string,
+  file?: UploadedFile,
+) => {
   try {
     if (await commonService.isEmailTaken(connection, user.email)) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
-      tenantID: user.tenantID,
+      tenantID: user.tenantID ?? tenantID,
       firstname: user.firstname,
       lastname: user.lastname,
       email: user.email,
       password: hashedPassword,
       phone: user.phone,
-      profileImage: file.filename,
-      isEmailVerified: false,
-      role: user.role,
+      profileImage: file ? file.filename : null,
+      isEmailVerified: user.isEmailVerified ?? false,
+      role: user.role ?? "user",
     };
     await connection("users").insert(insertedUser);
     return insertedUser;
@@ -55,16 +60,15 @@ const createUser = async (connection: Knex, user: User, file: UploadedFile) => {
   }
 };
 
+const getUserByID = async (connection: Knex, id: string): Promise<any> => {
+  return await connection("users").where({ id }).first();
+};
+
 const getUserByEmail = async (
   connection: Knex,
   email: string,
 ): Promise<any> => {
-  try {
-    const findedUser = await connection("users").where({ email }).first();
-    return findedUser;
-  } catch (error: DatabaseError | any) {
-    throw new ApiError(httpStatus.BAD_REQUEST, error.message);
-  }
+  return await connection("users").where({ email }).first();
 };
 
-export default { createUser, getUserByEmail };
+export default { createUser, getUserByID, getUserByEmail };

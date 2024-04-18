@@ -24,7 +24,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     password,
   );
   const token = await tokenService.generateAuthTokens(user);
-  res.status(httpStatus.OK).json({ user, token: token.accessToken });
+  res.status(httpStatus.OK).json({ token: token.accessToken });
 });
 
 export default { registerUser, loginUser };
