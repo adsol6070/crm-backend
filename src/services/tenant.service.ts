@@ -3,13 +3,31 @@ import { db } from '../config/databse';
 import { connectionService } from './index';
 import config from '../config/config';
 import { migrate } from '../migrations';
+import slugify from "slugify";
 
 interface Params {
   tenantName: string;
   password: string;
   uuid: string;
 }
-
+interface UpdateParams {
+  tenantId?: string;
+}
+interface Newdata {
+  uuid?: string;
+  db_name: string;
+  db_username: string;
+  db_password: string;
+  // Add more properties as needed
+}
+interface GetTenant {
+    uuid: string;
+    db_name: string;
+    db_username: string;
+    db_password: string;
+    created_at: string;
+    updated_at: string;
+}
 const up = async (params: Params): Promise<void> => {
   const job = new Queue(
     `setting-up-database-${new Date().getTime()}`,
@@ -56,5 +74,42 @@ const down = async (params: Params): Promise<void> => {
     }
   });
 };
+const updateTenant = async (params: UpdateParams, newData: Newdata, getTenant: GetTenant): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const job = new Queue(
+      `updating-tenant-${new Date().getTime()}`,
+      `redis://${config.redis.host}:${config.redis.port}`
+    );
 
-export default { up, down };
+    job.add({ ...params, ...newData });
+
+    job.process(async (job, done) => {
+      const databaseName = slugify(newData.db_name.toLowerCase(), "_");
+      try {
+        await db.raw(
+          `SELECT pg_terminate_backend(pg_stat_activity.pid)
+          FROM pg_stat_activity
+          WHERE pg_stat_activity.datname = '${getTenant.db_name}';`
+        );
+        await db.raw(`ALTER DATABASE ${getTenant.db_name} RENAME TO ${databaseName}`);
+        await db.raw(`ALTER ROLE ${getTenant.db_name} RENAME TO ${databaseName}`);
+        // Perform the update operation
+        const updatedTenant = await db("tenants")
+          .where({ uuid: params.tenantId })
+          .update(newData)
+          .returning("*");
+
+        // Resolve the promise with the updated tenant
+        resolve(updatedTenant[0]); // Assuming returning("*") returns an array with a single element
+        done(); // Notify Bull that the job is done
+      } catch (error) {
+        // Reject the promise with the error if an error occurs
+        reject(error);
+        console.error(error);
+      }
+    });
+  });
+};
+
+
+export default { up, down, updateTenant };
