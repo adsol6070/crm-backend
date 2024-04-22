@@ -6,6 +6,7 @@ import slugify from "slugify";
 import { db } from "../config/databse";
 import { tenantService } from "../services";
 import { Request, Response } from "express";
+import ApiError from "../utils/ApiError";
 
 const createTenant = catchAsync(async (req: Request, res: Response) => {
   const { organization } = req.body;
@@ -24,4 +25,18 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).send({ tenant: { ...tenant } });
 });
 
-export default { createTenant };
+const deleteTenant = catchAsync(async (req: Request, res: Response) => {
+  const { tenantName } = req.params; // Assuming tenantName is extracted from the request parameters
+    // Retrieve the password and uuid from the database or another source
+    const { password, uuid } = await db("tenants")
+      .select("db_password as password", "uuid")
+      .where({ db_name: tenantName })
+      .first();
+
+    // Call the deleteTenant function to delete the tenant
+    await tenantService.down({ tenantName, password, uuid });
+
+    // Send a success response indicating successful deletion
+    res.status(httpStatus.OK).send({ message: "Tenant deleted successfully" });
+});
+export default { createTenant, deleteTenant };

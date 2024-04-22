@@ -9,6 +9,7 @@ import {
 import { Request, Response } from "express";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
+  // console.log(req.body)
   const uploadedFile = req.file as any;
   const connection = await connectionService.getConnection();
   const user = await userService.createUser(connection, req.body, uploadedFile);
@@ -24,7 +25,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     password,
   );
   const token = await tokenService.generateAuthTokens(user);
-  res.status(httpStatus.OK).json({ token: token.accessToken });
+  res.status(httpStatus.OK).json({ user, token: token.accessToken });
 });
 
 export default { registerUser, loginUser };
