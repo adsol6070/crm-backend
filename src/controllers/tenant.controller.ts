@@ -24,4 +24,36 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).send({ tenant: { ...tenant } });
 });
 
-export default { createTenant };
+const deleteTenant = catchAsync(async (req: Request, res: Response) => {
+  const { tenantName } = req.params; 
+    const { password, uuid } = await db("tenants")
+      .select("db_password as password", "uuid")
+      .where({ db_name: tenantName })
+      .first();
+
+    await tenantService.down({ tenantName, password, uuid });
+
+    res.status(httpStatus.NO_CONTENT).send({ message: "Tenant deleted successfully" });
+});
+
+const getTenants = catchAsync(async (req: Request, res: Response) => {
+    const tenants = await db("tenants").select("*");
+    res.status(httpStatus.OK).send(tenants);
+});
+
+const editTenant = catchAsync(async (req: Request, res: Response) => {
+  const { tenantId } = req.params; 
+  const { newData } = req.body; 
+  const modifiedBodyData = {
+    ...newData,
+    db_name: slugify(newData.db_name.toLowerCase(), "_")
+  }
+  const getTenant = await db('tenants')
+  .select('*')
+  .where({ uuid: tenantId })
+  .first();
+    const updatedTenant = await tenantService.updateTenant( { tenantId }, modifiedBodyData , getTenant);
+    res.status(httpStatus.OK).send(updatedTenant);
+});
+
+export default { createTenant, deleteTenant, getTenants, editTenant};

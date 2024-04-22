@@ -54,7 +54,6 @@ const createUser = async (
       isEmailVerified: user.isEmailVerified ?? false,
       role: user.role ?? "user",
     };
-
     await connection("users").insert(insertedUser);
     return insertedUser;
   } catch (error: DatabaseError | any) {
