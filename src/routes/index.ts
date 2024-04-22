@@ -2,6 +2,7 @@ import express from "express";
 import authRoute from "./auth.route";
 import userRoute from "./user.route";
 import tenantRoute from "./tenant.route";
+import blogRoute from "./blog.route";
 
 const router = express.Router();
 const defaultRoutes = [
@@ -16,6 +17,10 @@ const defaultRoutes = [
   {
     path: "/tenant",
     route: tenantRoute,
+  },
+  {
+    path: "/blog",
+    route: blogRoute,
   },
 ];
 

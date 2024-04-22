@@ -10,8 +10,8 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.createUser(
     connection,
     req.body,
-    req.user?.tenantID,
     uploadedFile,
+    req.user?.tenantID,
   );
   res.status(httpStatus.CREATED).json({ user });
 });
@@ -25,4 +25,22 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
   res.send(user);
 });
 
-export default { createUser, getUser };
+const updateUser = catchAsync(async (req: Request, res: Response) => {
+  const uploadedFile = req.file as any;
+  const connection = await connectionService.getConnection();
+  const user = await userService.updateUserById(
+    connection,
+    req.params.userId,
+    req.body,
+    uploadedFile,
+  );
+  res.status(httpStatus.OK).json({ user });
+});
+
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getConnection();
+  const user = await userService.deleteUserById(connection, req.params.userId);
+  res.status(httpStatus.NO_CONTENT).json({ user });
+});
+
+export default { createUser, getUser, updateUser, deleteUser };

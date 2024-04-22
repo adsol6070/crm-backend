@@ -9,6 +9,7 @@ interface DatabaseError extends Error {
 }
 
 interface User {
+  id?: string;
   tenantID?: string;
   firstname: string;
   lastname: string;
@@ -34,8 +35,8 @@ interface UploadedFile {
 const createUser = async (
   connection: Knex,
   user: User,
-  tenantID?: string,
   file?: UploadedFile,
+  tenantID?: string,
 ) => {
   try {
     if (await commonService.isEmailTaken(connection, user.email)) {
@@ -72,4 +73,69 @@ const getUserByEmail = async (
   return await connection("users").where({ email }).first();
 };
 
-export default { createUser, getUserByID, getUserByEmail };
+const updateUserById = async (
+  connection: Knex,
+  userId: string,
+  updateBody: Partial<User>,
+  file?: UploadedFile,
+) => {
+  const user = await getUserByID(connection, userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+  if (
+    updateBody.email &&
+    (await commonService.isEmailTaken(connection, updateBody.email))
+  ) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+  }
+
+  if (updateBody.password) {
+    updateBody.password = await bcrypt.hash(user.password, 8);
+  }
+
+  if (file) {
+    updateBody.profileImage = file.filename;
+  }
+
+  const updates = Object.entries(updateBody).reduce<Partial<User>>(
+    (acc, [key, value]) => {
+      if (value !== undefined) {
+        const userKey: keyof User = key as keyof User;
+        acc[userKey] = value as any; // Ensure the key is a valid keyof User
+      }
+      return acc;
+    },
+    {} as Partial<User>,
+  );
+
+  const updatedUser = await connection("users")
+    .where({ id: userId })
+    .update(updates)
+    .returning("*");
+
+  if (updatedUser.length === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found after update");
+  }
+  return updatedUser[0];
+};
+
+const deleteUserById = async (connection: Knex, userId: string) => {
+  const user = await getUserByID(connection, userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+  const deletedCount = await connection("users").where({ id: userId }).delete();
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No user found to delete");
+  }
+  return deletedCount;
+};
+
+export default {
+  createUser,
+  getUserByID,
+  getUserByEmail,
+  updateUserById,
+  deleteUserById,
+};

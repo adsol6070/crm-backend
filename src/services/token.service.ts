@@ -20,6 +20,7 @@ interface User {
 const generateToken = (
   userId: string,
   tenantID: string,
+  role: string,
   expires: number,
   type: string,
   secret: string,
@@ -27,6 +28,7 @@ const generateToken = (
   const payload = {
     sub: userId,
     tenantID,
+    role,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + expires,
     type,
@@ -38,6 +40,7 @@ const generateAuthTokens = async (user: User) => {
   const accessToken = generateToken(
     user.id,
     user.tenantID,
+    user.role,
     config.jwt.accessExpirationTime,
     tokenTypes.ACCESS,
     config.jwt.secret,

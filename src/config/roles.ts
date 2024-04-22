@@ -7,16 +7,25 @@ const Permissions = {
   MANAGE_USERS: "manageUsers",
   MANAGE_SETTINGS: "manageSettings",
   SYSTEM_MAINTENANCE: "systemMaintenance",
+  READ_BLOGS: "getBlogs",
+  MANAGE_BLOGS: "manageBlogs",
 };
 
 const allRoles: RoleRights = {
   user: [],
-  admin: [Permissions.READ_USERS, Permissions.MANAGE_USERS],
+  admin: [
+    Permissions.READ_USERS,
+    Permissions.MANAGE_USERS,
+    Permissions.READ_BLOGS,
+    Permissions.MANAGE_BLOGS,
+  ],
   superAdmin: [
     Permissions.READ_USERS,
     Permissions.MANAGE_USERS,
     Permissions.MANAGE_SETTINGS,
     Permissions.SYSTEM_MAINTENANCE,
+    Permissions.READ_BLOGS,
+    Permissions.MANAGE_BLOGS,
   ],
 };
 
