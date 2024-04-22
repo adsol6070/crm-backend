@@ -44,12 +44,15 @@ const getTenants = catchAsync(async (req: Request, res: Response) => {
 const editTenant = catchAsync(async (req: Request, res: Response) => {
   const { tenantId } = req.params; 
   const { newData } = req.body; 
+  const modifiedBodyData = {
+    ...newData,
+    db_name: slugify(newData.db_name.toLowerCase(), "_")
+  }
   const getTenant = await db('tenants')
   .select('*')
   .where({ uuid: tenantId })
   .first();
-  console.log(getTenant)
-    const updatedTenant = await tenantService.updateTenant( { tenantId }, newData , getTenant);
+    const updatedTenant = await tenantService.updateTenant( { tenantId }, modifiedBodyData , getTenant);
     res.status(httpStatus.OK).send(updatedTenant);
 });
 
