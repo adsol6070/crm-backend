@@ -73,6 +73,7 @@ const deleteBlogById = async (
   blogId: string,
 ): Promise<number> => {
   const deletedCount = await connection("blogs").where({ id: blogId }).delete();
+  
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No blog found to delete");
   }
