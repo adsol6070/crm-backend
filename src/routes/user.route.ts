@@ -13,7 +13,8 @@ router
     upload.single("profileImage"),
     connectionRequest,
     userController.createUser,
-  );
+  )
+  .get(auth("getUsers"), connectionRequest, userController.getUsers);
 
 router
   .route("/:userId")
@@ -25,5 +26,12 @@ router
     userController.updateUser,
   )
   .delete(auth("manageUsers"), connectionRequest, userController.deleteUser);
+
+router.get(
+  "/:userId/image",
+  auth("getUsers"),
+  connectionRequest,
+  userController.getUserImage,
+);
 
 export default router;

@@ -3,6 +3,7 @@ import { Knex } from "knex";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import commonService from "./common.service";
+import path from "path";
 
 interface DatabaseError extends Error {
   code?: string;
@@ -65,11 +66,32 @@ const getUserByID = async (connection: Knex, id: string): Promise<any> => {
   return await connection("users").where({ id }).first();
 };
 
+const getUserImageById = async (connection: Knex, id: string) => {
+  const user = await connection("users").where({ id }).first();
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
+  }
+  const image = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    user.tenantID as string,
+    "general",
+    user.profileImage,
+  );
+  return image;
+};
+
 const getUserByEmail = async (
   connection: Knex,
   email: string,
 ): Promise<any> => {
   return await connection("users").where({ email }).first();
+};
+
+const getAllUsers = async (connection: Knex): Promise<User[]> => {
+  const users = await connection<User>("users").select("*");
+  return users;
 };
 
 const updateUserById = async (
@@ -134,6 +156,8 @@ const deleteUserById = async (connection: Knex, userId: string) => {
 export default {
   createUser,
   getUserByID,
+  getUserImageById,
+  getAllUsers,
   getUserByEmail,
   updateUserById,
   deleteUserById,

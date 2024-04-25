@@ -13,7 +13,8 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
     uploadedFile,
     req.user?.tenantID,
   );
-  res.status(httpStatus.CREATED).json({ user });
+  const message = "User created successfully.";
+  res.status(httpStatus.CREATED).json({ message, user });
 });
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
@@ -23,6 +24,24 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
   res.send(user);
+});
+
+const getUserImage = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getConnection();
+  const userId = req.params.userId;
+  const imagePath = await userService.getUserImageById(connection, userId);
+  res.status(httpStatus.OK).sendFile(imagePath);
+});
+
+const getUsers = catchAsync(async (req: Request, res: Response) => {
+  console.log("getUsers get called");
+  const connection = await connectionService.getConnection();
+  const users = await userService.getAllUsers(connection);
+  if (!users) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Users not found");
+  }
+
+  res.status(httpStatus.OK).json({ users });
 });
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
@@ -40,7 +59,14 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getConnection();
   const user = await userService.deleteUserById(connection, req.params.userId);
-  res.status(httpStatus.NO_CONTENT).json({ user });
+  res.status(httpStatus.NO_CONTENT).send();
 });
 
-export default { createUser, getUser, updateUser, deleteUser };
+export default {
+  createUser,
+  getUser,
+  getUsers,
+  updateUser,
+  deleteUser,
+  getUserImage,
+};
