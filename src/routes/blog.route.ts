@@ -15,7 +15,13 @@ router
     connectionRequest,
     blogController.createBlog,
   );
-
+  router.get(
+    "/:blogId/image",
+    auth("getBlogs"),
+    connectionRequest,
+    blogController.getBlogImage,
+  );
+  
 router
   .route("/:blogId")
   .get(auth("getBlogs"), connectionRequest, blogController.getBlogById)
@@ -30,5 +36,6 @@ router
     connectionRequest,
     blogController.deleteBlogById,
   );
+
 
 export default router;

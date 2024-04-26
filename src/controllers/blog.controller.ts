@@ -5,6 +5,7 @@ import catchAsync from "../utils/catchAsync";
 
 const createBlog = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
+  console.log(uploadedFile)
   const connection = await connectionService.getConnection();
   const blog = await blogService.createBlog(connection, req.body, uploadedFile);
   res.status(httpStatus.CREATED).send(blog);
@@ -25,6 +26,13 @@ const getBlogById = catchAsync(async (req: Request, res: Response) => {
   } else {
     res.status(httpStatus.NOT_FOUND).send({ message: "Blog not found" });
   }
+});
+
+const getBlogImage = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getConnection();
+  const blogId = req.params.blogId;
+  const imagePath = await blogService.getBlogImageById(connection, blogId);
+  res.status(httpStatus.OK).sendFile(imagePath);
 });
 
 const updateBlogById = catchAsync(async (req: Request, res: Response) => {
@@ -60,6 +68,7 @@ export default {
   createBlog,
   getAllBlogs,
   getBlogById,
+  getBlogImage,
   updateBlogById,
   deleteBlogById,
 };

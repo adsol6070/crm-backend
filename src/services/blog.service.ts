@@ -1,6 +1,7 @@
 import { Knex } from "knex";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
+import path from "path";
 
 interface Blog {
   id?: string;
@@ -52,6 +53,22 @@ const getBlogById = async (connection: Knex, blogId: string): Promise<Blog> => {
   return blog;
 };
 
+const getBlogImageById = async (connection: Knex, id: string) => {
+  const blog = await connection("blogs").where({ id }).first();
+  if (!blog) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Blog not found");
+  }
+  const image = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    blog.tenantID as string,
+    "general",
+    blog.blogImage,
+  );
+  return image;
+};
+
 const updateBlogById = async (
   connection: Knex,
   blogId: string,
@@ -84,6 +101,7 @@ export default {
   createBlog,
   getAllBlogs,
   getBlogById,
+  getBlogImageById,
   updateBlogById,
   deleteBlogById,
 };
