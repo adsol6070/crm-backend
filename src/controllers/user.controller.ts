@@ -34,7 +34,6 @@ const getUserImage = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUsers = catchAsync(async (req: Request, res: Response) => {
-  console.log("getUsers get called");
   const connection = await connectionService.getConnection();
   const users = await userService.getAllUsers(connection);
   if (!users) {
@@ -47,13 +46,14 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
 const updateUser = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
   const connection = await connectionService.getConnection();
-  const user = await userService.updateUserById(
+  await userService.updateUserById(
     connection,
     req.params.userId,
     req.body,
     uploadedFile,
   );
-  res.status(httpStatus.OK).json({ user });
+  const message = "User updated successfully.";
+  res.status(httpStatus.OK).json({ message });
 });
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {

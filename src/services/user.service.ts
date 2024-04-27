@@ -22,15 +22,17 @@ interface User {
   role?: string;
 }
 
+type SafeUser = Omit<User, "password" | "created_at" | "updated_at">;
+
 interface UploadedFile {
-  fieldname: string; // Field name specified in the form
-  originalname: string; // Original file name on the user's computer
-  encoding: string; // Encoding type of the file
-  mimetype: string; // Mime type of the file
-  destination: string; // Folder to which the file has been saved
-  filename: string; // The name of the file within the destination
-  path: string; // The full path to the uploaded file
-  size: number; // The size of the file in bytes
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  destination: string;
+  filename: string;
+  path: string;
+  size: number;
 }
 
 const createUser = async (
@@ -89,8 +91,18 @@ const getUserByEmail = async (
   return await connection("users").where({ email }).first();
 };
 
-const getAllUsers = async (connection: Knex): Promise<User[]> => {
-  const users = await connection<User>("users").select("*");
+const getAllUsers = async (connection: Knex): Promise<SafeUser[]> => {
+  const users = await connection<SafeUser>("users").select(
+    "id",
+    "tenantID",
+    "firstname",
+    "lastname",
+    "email",
+    "phone",
+    "profileImage",
+    "isEmailVerified",
+    "role",
+  );
   return users;
 };
 
@@ -103,12 +115,6 @@ const updateUserById = async (
   const user = await getUserByID(connection, userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
-  }
-  if (
-    updateBody.email &&
-    (await commonService.isEmailTaken(connection, updateBody.email))
-  ) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
 
   if (updateBody.password) {
