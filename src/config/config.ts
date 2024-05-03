@@ -22,6 +22,13 @@ interface EnvironmentVariables {
   REDIS_HOST: string;
   JWT_ACCESS_SECRET: string;
   ACCESS_TOKEN_EXPIRY: number;
+  REFRESH_TOKEN_EXPIRY: number;
+  JWT_RESET_PASSWORD_EXPIRATION_MINUTES: number;
+  SMTP_HOST: string;
+  SMTP_PORT: number;
+  SMTP_USERNAME: string;
+  SMTP_PASSWORD: string;
+  EMAIL_FROM: string;
 }
 
 // Define the schema for validating environment variables
@@ -41,6 +48,19 @@ const envVarsSchema = Joi.object<EnvironmentVariables>({
   ACCESS_TOKEN_EXPIRY: Joi.number()
     .required()
     .description("Seconds after which access token expires"),
+  REFRESH_TOKEN_EXPIRY: Joi.number()
+    .required()
+    .description("Seconds after which refresh token expires"),
+  JWT_RESET_PASSWORD_EXPIRATION_MINUTES: Joi.number()
+    .default(300)
+    .description("minutes after which reset password token expires"),
+  SMTP_HOST: Joi.string().description("server that will send the emails"),
+  SMTP_PORT: Joi.number().description("port to connect to the email server"),
+  SMTP_USERNAME: Joi.string().description("username for email server"),
+  SMTP_PASSWORD: Joi.string().description("password for email server"),
+  EMAIL_FROM: Joi.string().description(
+    "the from field in the emails sent by the app",
+  ),
 }).unknown();
 
 // Validate and extract environment variables
@@ -75,6 +95,20 @@ const config = {
   jwt: {
     secret: envVars.JWT_ACCESS_SECRET,
     accessExpirationTime: envVars.ACCESS_TOKEN_EXPIRY,
+    refreshExpirationTime: envVars.REFRESH_TOKEN_EXPIRY,
+    resetPasswordExpirationMinutes:
+      envVars.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
+  },
+  email: {
+    smtp: {
+      host: envVars.SMTP_HOST,
+      port: envVars.SMTP_PORT,
+      auth: {
+        user: envVars.SMTP_USERNAME,
+        pass: envVars.SMTP_PASSWORD,
+      },
+    },
+    from: envVars.EMAIL_FROM,
   },
 };
 

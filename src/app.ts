@@ -11,6 +11,7 @@ import { authLimiter } from "./middlewares/rateLimiter";
 import { router } from "./routes";
 import passport from "passport";
 import { jwtStrategy } from "./config/passport";
+import path from "path";
 
 const app: Application = express();
 
@@ -20,6 +21,10 @@ if (config.env !== "test") {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "templates"));
+app.use(express.static(path.join(__dirname, "../public")));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
