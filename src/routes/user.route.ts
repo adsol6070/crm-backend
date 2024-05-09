@@ -3,33 +3,46 @@ import { auth } from "../middlewares/auth";
 import { userController } from "../controllers";
 import { connectionRequest } from "../middlewares/connectionResolver";
 import upload from "../middlewares/multer";
+import { Permission } from "../config/permissions";
 
 const router = express.Router();
 
 router
   .route("/")
   .post(
-    auth("manageUsers"),
+    auth("Users", Permission.CREATE),
     upload.single("profileImage"),
     connectionRequest,
     userController.createUser,
   )
-  .get(auth("getUsers"), connectionRequest, userController.getUsers);
+  .get(
+    auth("Users", Permission.READ),
+    connectionRequest,
+    userController.getUsers,
+  );
 
 router
   .route("/:userId")
-  .get(auth("getUsers"), connectionRequest, userController.getUser)
+  .get(
+    auth("Users", Permission.READ),
+    connectionRequest,
+    userController.getUser,
+  )
   .patch(
-    auth("manageUsers"),
+    auth("Users", Permission.UPDATE),
     upload.single("profileImage"),
     connectionRequest,
     userController.updateUser,
   )
-  .delete(auth("manageUsers"), connectionRequest, userController.deleteUser);
+  .delete(
+    auth("Users", Permission.DELETE),
+    connectionRequest,
+    userController.deleteUser,
+  );
 
 router.get(
   "/:userId/image",
-  auth("getUsers"),
+  auth("Users", Permission.READ),
   connectionRequest,
   userController.getUserImage,
 );

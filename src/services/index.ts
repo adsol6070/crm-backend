@@ -6,3 +6,4 @@ export { default as commonService } from "./common.service";
 export { default as tokenService } from "./token.service";
 export { default as blogService } from "./blog.service";
 export { default as emailService } from "./email.service";
+export { default as permissionsService } from "./permissions.service";

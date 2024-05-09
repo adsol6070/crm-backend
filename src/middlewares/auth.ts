@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import passport from "passport";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
-import { roleRights } from "../config/roles";
+import { connectionService, permissionsService } from "../services";
 
 const verifyCallback =
   (
@@ -10,6 +10,7 @@ const verifyCallback =
     resolve: (value?: unknown) => void,
     reject: (reason?: any) => any,
     requiredRights: string[],
+    category: string,
   ) =>
   async (err: any, user: any, info: any) => {
     if (err || info || !user) {
@@ -19,27 +20,56 @@ const verifyCallback =
     }
 
     req.user = user;
-    if (requiredRights.length) {
-      const userRights = roleRights.get(user.role);
-      const hasRequiredRights = requiredRights.every((requiredRight) =>
-        userRights?.includes(requiredRight),
+
+    if (user.role === "superAdmin") {
+      return resolve();
+    }
+
+    try {
+      const connection = await connectionService.getTenantConnection(
+        user.tenantID,
       );
+
+      const permissions = await permissionsService.getPermissionByRole(
+        connection,
+        user.role,
+      );
+
+      if (!permissions) {
+        return reject(
+          new ApiError(httpStatus.FORBIDDEN, "Role permissions not found"),
+        );
+      }
+
+      const userRights = permissions.permissions;
+      const categoryRights = userRights[category] || {};
+      const hasRequiredRights = requiredRights.every((requiredRight) => {
+        return categoryRights[requiredRight] === true;
+      });
+
       if (!hasRequiredRights) {
         return reject(new ApiError(httpStatus.FORBIDDEN, "Forbidden"));
       }
-    }
 
-    resolve();
+      resolve();
+    } catch (error) {
+      return reject(
+        new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          "Failed to verify permissions",
+        ),
+      );
+    }
   };
 
 const auth =
-  (...requiredRights: string[]) =>
+  (category: string, ...requiredRights: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     return new Promise((resolve, reject) => {
       passport.authenticate(
         "jwt",
         { session: false },
-        verifyCallback(req, resolve, reject, requiredRights),
+        verifyCallback(req, resolve, reject, requiredRights, category),
       )(req, res, next);
     })
       .then(() => next())
