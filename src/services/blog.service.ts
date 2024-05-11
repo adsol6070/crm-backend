@@ -27,6 +27,14 @@ interface UploadedFile {
   size: number; // The size of the file in bytes
 }
 
+interface BlogCategory {
+  id?: string;
+  tenantID: string;
+  category: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 const createBlog = async (
   connection: Knex,
   blog: Blog,
@@ -100,6 +108,70 @@ const deleteBlogById = async (
   return deletedCount;
 };
 
+const createBlogCategory = async (
+  connection: Knex,
+  blogCategory: BlogCategory,
+): Promise<BlogCategory> => {
+  const [insertedBlogCategory] = await connection("blogCategory")
+    .insert(blogCategory)
+    .returning("*");
+  return insertedBlogCategory;
+};
+
+const getAllBlogCategory = async (
+  connection: Knex,
+): Promise<BlogCategory[]> => {
+  return await connection("blogCategory").select("*");
+};
+
+const getBlogCategoryById = async (
+  connection: Knex,
+  blogCategoryId: string,
+): Promise<BlogCategory> => {
+  const blog = await connection("blogCategory")
+    .where({ id: blogCategoryId })
+    .first();
+  if (!blog) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Blog Category not found");
+  }
+  return blog;
+};
+
+const updateBlogByCategory = async (
+  connection: Knex,
+  blogCategoryId: string,
+  updateBlogCategoryData: Partial<BlogCategory>,
+): Promise<BlogCategory> => {
+  const updatedBlogCategory = await connection("blogCategory")
+    .where({ id: blogCategoryId })
+    .update(updateBlogCategoryData)
+    .returning("*");
+  if (updatedBlogCategory.length === 0) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "Blog Category not found after update",
+    );
+  }
+  return updatedBlogCategory[0];
+};
+
+const deleteBlogCategory = async (
+  connection: Knex,
+  blogCategoryId: string,
+): Promise<number> => {
+  const deletedCount = await connection("blogCategory")
+    .where({ id: blogCategoryId })
+    .delete();
+
+  if (deletedCount === 0) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "No blog category found to delete",
+    );
+  }
+  return deletedCount;
+};
+
 export default {
   createBlog,
   getAllBlogs,
@@ -107,4 +179,9 @@ export default {
   getBlogImageById,
   updateBlogById,
   deleteBlogById,
+  createBlogCategory,
+  getAllBlogCategory,
+  getBlogCategoryById,
+  updateBlogByCategory,
+  deleteBlogCategory,
 };

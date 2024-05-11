@@ -8,6 +8,33 @@ import { Permission } from "../config/permissions";
 const router = express.Router();
 
 router
+  .route("/blogCategory")
+  .get(auth("manageBlogs"), connectionRequest, blogController.getBlogCategory)
+  .post(
+    auth("manageBlogs"),
+    connectionRequest,
+    blogController.createBlogCategory,
+  );
+
+router
+  .route("/blogCategory/:blogCategoryId")
+  .get(
+    auth("manageBlogs"),
+    connectionRequest,
+    blogController.getBlogCategoryById,
+  )
+  .patch(
+    auth("manageBlogs"),
+    connectionRequest,
+    blogController.updateBlogCategory,
+  )
+  .delete(
+    auth("manageBlogs"),
+    connectionRequest,
+    blogController.deleteBlogByCategory,
+  );
+
+router
   .route("/")
   .get(
     auth("Blogs", Permission.READ),
