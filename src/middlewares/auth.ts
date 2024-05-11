@@ -3,6 +3,7 @@ import passport from "passport";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { connectionService, permissionsService } from "../services";
+import { commonKnex } from "../config/databse";
 
 const verifyCallback =
   (
@@ -26,9 +27,13 @@ const verifyCallback =
     }
 
     try {
-      const connection = await connectionService.getTenantConnection(
-        user.tenantID,
-      );
+      const tenant = await commonKnex("tenants")
+        .where({
+          tenantID: user.tenantID,
+          active: true,
+        })
+        .first();
+      const connection = await connectionService.getTenantKnex(tenant);
 
       const permissions = await permissionsService.getPermissionByRole(
         connection,

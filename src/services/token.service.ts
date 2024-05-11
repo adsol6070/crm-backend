@@ -5,6 +5,7 @@ import { Knex } from "knex";
 import userService from "./user.service";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
+import { v4 as uuidv4 } from "uuid";
 
 interface User {
   id: string;
@@ -52,6 +53,7 @@ const saveToken = async (
 ) => {
   const tokenDoc = await connection("tokens")
     .insert({
+      id: uuidv4(),
       tenantID,
       user: userId,
       token,

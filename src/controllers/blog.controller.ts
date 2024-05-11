@@ -5,20 +5,19 @@ import catchAsync from "../utils/catchAsync";
 
 const createBlog = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
-  console.log(uploadedFile)
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const blog = await blogService.createBlog(connection, req.body, uploadedFile);
   res.status(httpStatus.CREATED).send(blog);
 });
 
 const getAllBlogs = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const blogs = await blogService.getAllBlogs(connection);
   res.status(httpStatus.OK).send(blogs);
 });
 
 const getBlogById = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
   const blog = await blogService.getBlogById(connection, blogId);
   if (blog) {
@@ -29,7 +28,7 @@ const getBlogById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getBlogImage = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
   const imagePath = await blogService.getBlogImageById(connection, blogId);
   res.status(httpStatus.OK).sendFile(imagePath);
@@ -37,7 +36,7 @@ const getBlogImage = catchAsync(async (req: Request, res: Response) => {
 
 const updateBlogById = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
   const updateData = req.body;
   const updatedBlog = await blogService.updateBlogById(
@@ -54,7 +53,7 @@ const updateBlogById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteBlogById = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
   const deletedCount = await blogService.deleteBlogById(connection, blogId);
   if (deletedCount) {

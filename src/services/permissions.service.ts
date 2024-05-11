@@ -1,8 +1,13 @@
 import { Knex } from "knex";
+import { v4 as uuidv4 } from "uuid";
 
 const createPermission = async (connection: Knex, permissionData: any) => {
+  const newPermissionData = {
+    ...permissionData,
+    id: uuidv4(),
+  };
   const [newPermission] = await connection("permissions")
-    .insert(permissionData)
+    .insert(newPermissionData)
     .returning("*");
   return newPermission;
 };

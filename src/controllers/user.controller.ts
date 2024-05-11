@@ -6,19 +6,19 @@ import ApiError from "../utils/ApiError";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.createUser(
     connection,
     req.body,
     uploadedFile,
-    req.user?.tenantID,
+    // req.user?.tenantID,
   );
   const message = "User created successfully.";
   res.status(httpStatus.CREATED).json({ message, user });
 });
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.getUserByID(connection, req.params.userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -27,14 +27,14 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUserImage = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const userId = req.params.userId;
   const imagePath = await userService.getUserImageById(connection, userId);
   res.status(httpStatus.OK).sendFile(imagePath);
 });
 
 const getUsers = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const users = await userService.getAllUsers(connection);
   if (!users) {
     throw new ApiError(httpStatus.NOT_FOUND, "Users not found");
@@ -45,7 +45,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   await userService.updateUserById(
     connection,
     req.params.userId,
@@ -57,7 +57,7 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.deleteUserById(connection, req.params.userId);
   res.status(httpStatus.NO_CONTENT).send();
 });

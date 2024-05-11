@@ -25,6 +25,13 @@ router.get(
   permissionsController.getRoles,
 );
 
+router.post(
+  "/by-role",
+  auth("viewPermissions"),
+  connectionRequest,
+  permissionsController.getPermissionByRole,
+);
+
 router
   .route("/:permissionId")
   .get(

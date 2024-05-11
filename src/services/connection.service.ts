@@ -1,65 +1,126 @@
-import knex from "knex";
-import { getNamespace } from "continuation-local-storage";
-import { db, dbConfiguration } from "../config/databse";
-import createTenantTable from "../migrations/tenant.table";
+import { AsyncLocalStorage } from "async_hooks";
+import knex, { Knex } from "knex";
+import logger from "../config/logger";
+import { config, commonKnex } from "../config/databse";
 
 interface Tenant {
-  uuid: string;
-  db_name: string;
-  db_username: string;
-  db_password: string;
-}
-
-interface TenantConnection {
-  uuid: string;
-  connection: any;
-}
-
-let tenantMapping: TenantConnection[] = [];
-
-const getConfig = (tenant: Tenant) => {
-  const {
-    db_username: user,
-    db_name: database,
-    db_password: password,
-  } = tenant;
-
-  return {
-    ...dbConfiguration,
-    connection: {
-      ...dbConfiguration.connection,
-      user,
-      database,
-      password,
-    },
+  tenantID?: string;
+  name: string;
+  db_connection: {
+    host: string;
+    user: string;
+    password: string;
+    database: string;
   };
-};
+  active?: boolean;
+}
 
-const getConnection = (): any | null =>
-  getNamespace("tenants")?.get("connection") || null;
+const asyncLocalStorage = new AsyncLocalStorage<{ knex: Knex }>();
+const tenantConnectionPools: Record<string, Knex> = {};
 
-const bootstrap = async () => {
+const getTenantKnex = (tenant: Tenant): Knex => {
   try {
-    await createTenantTable();
-    const tenants: Tenant[] = await db
-      .select("uuid", "db_name", "db_username", "db_password")
-      .from("tenants");
-
-    tenantMapping = tenants.map((tenant) => ({
-      uuid: tenant.uuid,
-      connection: knex(getConfig(tenant)),
-    }));
+    if (!tenantConnectionPools[tenant.name]) {
+      logger.info(`Creating new connection pool for tenant: ${tenant.name}`);
+      tenantConnectionPools[tenant.name] = knex({
+        ...config.tenant,
+        connection: {
+          host: tenant.db_connection.host,
+          user: tenant.db_connection.user,
+          password: tenant.db_connection.password,
+          database: tenant.db_connection.database,
+        },
+        migrations: {
+          directory: "./src/migrations/tenant",
+        },
+        pool: { min: 2, max: 10 },
+        acquireConnectionTimeout: 10000,
+      });
+    }
+    return tenantConnectionPools[tenant.name];
   } catch (error) {
-    console.error(error);
+    logger.error(
+      `Error creating Knex instance for tenant ${tenant.name}:`,
+      error,
+    );
+    throw error;
   }
 };
 
-const getTenantConnection = (uuid: string) => {
-  const tenant = tenantMapping.find((tenant) => tenant.uuid === uuid);
+const cleanupTenantConnections = async (): Promise<void> => {
+  try {
+    const activeTenants = await commonKnex(
+      <{ name: string }>(<unknown>"tenants"),
+    )
+      .where("active", true)
+      .select("name");
+    const activeTenantNames = new Set(activeTenants.map((t: any) => t.name));
 
-  if (!tenant) return null;
-
-  return tenant.connection;
+    for (const tenantName in tenantConnectionPools) {
+      if (!activeTenantNames.has(tenantName)) {
+        logger.info(
+          `Cleaning up connection pool for inactive tenant: ${tenantName}`,
+        );
+        await tenantConnectionPools[tenantName].destroy();
+        delete tenantConnectionPools[tenantName];
+      }
+    }
+  } catch (error) {
+    logger.error("Error cleaning up tenant connections:", error);
+  }
 };
 
-export default { bootstrap, getTenantConnection, getConnection };
+const runWithTenantContext = <T>(
+  tenant: Tenant,
+  callback: () => T,
+): T | undefined => {
+  const store = { knex: getTenantKnex(tenant) };
+  return asyncLocalStorage.run(store, callback);
+};
+
+const getCurrentTenantKnex = (): Knex => {
+  return asyncLocalStorage.getStore()?.knex as Knex;
+};
+
+const createCommonDatabase = async () => {
+  const initialKnex = knex({
+    client: "pg",
+    connection: {
+      ...config.common.connection,
+      password: config.common.connection.password,
+      database: "postgres",
+    },
+  });
+
+  try {
+    const dbExists = await initialKnex.raw(
+      `SELECT 1 FROM pg_database WHERE datname = ?;`,
+      [config.common.connection.database],
+    );
+
+    if (!dbExists.rows.length) {
+      await initialKnex.raw(`CREATE DATABASE ??`, [
+        config.common.connection.database,
+      ]);
+      logger.info(
+        `Database ${config.common.connection.database} created successfully.`,
+      );
+    } else {
+      logger.info(
+        `Database ${config.common.connection.database} already exists.`,
+      );
+    }
+  } catch (error) {
+    logger.error(`Error creating common database: ${error}`);
+  } finally {
+    await initialKnex.destroy();
+  }
+};
+
+export default {
+  getTenantKnex,
+  runWithTenantContext,
+  getCurrentTenantKnex,
+  cleanupTenantConnections,
+  createCommonDatabase,
+};

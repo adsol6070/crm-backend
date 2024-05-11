@@ -5,7 +5,7 @@ import { connectionService, permissionsService } from "../services";
 import ApiError from "../utils/ApiError";
 
 const createPermission = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const permission = await permissionsService.createPermission(
     connection,
     req.body,
@@ -14,7 +14,7 @@ const createPermission = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPermission = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const permission = await permissionsService.getPermissionById(
     connection,
     req.params.id,
@@ -27,7 +27,7 @@ const getPermission = catchAsync(async (req: Request, res: Response) => {
 
 const getPermissionByRole = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const connection = await connectionService.getConnection();
+    const connection = await connectionService.getCurrentTenantKnex();
     const permission = await permissionsService.getPermissionByRole(
       connection,
       req.body.role,
@@ -41,13 +41,13 @@ const getPermissionByRole = catchAsync(
 );
 
 const getAllPermissions = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const permissions = await permissionsService.getAllPermissions(connection);
   res.status(httpStatus.OK).json(permissions);
 });
 
 const updatePermission = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const updatedPermission = await permissionsService.updatePermissionById(
     connection,
     req.params.permissionId,
@@ -57,7 +57,7 @@ const updatePermission = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deletePermission = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   await permissionsService.deletePermissionById(
     connection,
     req.params.permissionId,
@@ -66,7 +66,7 @@ const deletePermission = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getRoles = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getConnection();
+  const connection = await connectionService.getCurrentTenantKnex();
   const roles = await permissionsService.getRoles(connection);
   if (!roles || roles.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No roles found");

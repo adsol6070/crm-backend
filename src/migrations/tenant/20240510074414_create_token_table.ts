@@ -1,14 +1,11 @@
-import { Knex } from "knex";
-import logger from "../config/logger";
+import type { Knex } from "knex";
 
-const createTokenTable = async (tenant: Knex): Promise<void> => {
+export async function up(knex: Knex): Promise<void> {
   try {
-    await tenant.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-
-    await tenant.schema.createTable(
+    await knex.schema.createTable(
       "tokens",
       function (table: Knex.CreateTableBuilder) {
-        table.uuid("id").primary().defaultTo(tenant.raw("uuid_generate_v4()"));
+        table.uuid("id").primary();
         table.uuid("tenantID").notNullable();
         table.uuid("user");
         table.foreign("user").references("users.id");
@@ -20,9 +17,14 @@ const createTokenTable = async (tenant: Knex): Promise<void> => {
       },
     );
   } catch (error) {
-    logger.error("Error creating token table:", error);
     throw error;
   }
-};
+}
 
-export default createTokenTable;
+export async function down(knex: Knex): Promise<void> {
+  try {
+    await knex.schema.dropTable("tokens");
+  } catch (error) {
+    throw error;
+  }
+}

@@ -7,7 +7,7 @@ let server: any;
 
 const startServer = async () => {
   try {
-    await connectionService.bootstrap();
+    await connectionService.createCommonDatabase();
     logger.info("Connected Successfully");
     server = app.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);

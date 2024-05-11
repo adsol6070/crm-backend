@@ -36,9 +36,9 @@ const envVarsSchema = Joi.object<EnvironmentVariables>({
   NODE_ENV: Joi.string().valid("production", "development", "test").required(),
   PORT: Joi.number().default(8000),
   DB_CLIENT: Joi.string().required().description("Database client"),
+  DB_HOST: Joi.string().default("localhost").description("Database host"),
   DB_USER: Joi.string().required().description("Database user"),
   DB_PORT: Joi.number().default(5432).description("Database port"),
-  DB_HOST: Joi.string().default("localhost").description("Database host"),
   DB_DATABASE: Joi.string().required().description("Database name"),
   DB_PASSWORD: Joi.string().required().description("Database password"),
   POSTGRES_ROLE: Joi.string().required().description("Postgres role"),
@@ -80,8 +80,8 @@ const config = {
   postgres: {
     client: envVars.DB_CLIENT,
     connection: {
-      user: envVars.DB_USER,
       host: envVars.DB_HOST,
+      user: envVars.DB_USER,
       port: envVars.DB_PORT,
       database: envVars.DB_DATABASE,
       password: envVars.DB_PASSWORD,

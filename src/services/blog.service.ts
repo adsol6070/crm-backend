@@ -2,6 +2,7 @@ import { Knex } from "knex";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 interface Blog {
   id?: string;
@@ -31,10 +32,12 @@ const createBlog = async (
   blog: Blog,
   file?: UploadedFile,
 ): Promise<Blog> => {
-  const { uploadType, ...blogData } = blog;
-  if (file) {
-    blogData.blogImage = file.filename;
-  }
+  const blogData: Blog = {
+    ...blog,
+    id: uuidv4(),
+    ...(file && { blogImage: file.filename }),
+  };
+
   const [insertedBlog] = await connection("blogs")
     .insert(blogData)
     .returning("*");
@@ -90,7 +93,7 @@ const deleteBlogById = async (
   blogId: string,
 ): Promise<number> => {
   const deletedCount = await connection("blogs").where({ id: blogId }).delete();
-  
+
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No blog found to delete");
   }

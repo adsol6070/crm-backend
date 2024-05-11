@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import commonService from "./common.service";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 interface DatabaseError extends Error {
   code?: string;
@@ -47,6 +48,7 @@ const createUser = async (
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);
     const insertedUser = {
+      id: uuidv4(),
       tenantID: user.tenantID ?? tenantID,
       firstname: user.firstname,
       lastname: user.lastname,

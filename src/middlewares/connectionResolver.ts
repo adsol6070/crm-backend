@@ -1,8 +1,8 @@
-import { createNamespace } from "continuation-local-storage";
-import { Request, Response, NextFunction } from "express";
-import { connectionService } from "../services";
-import httpStatus from "http-status";
+import { NextFunction, Request, Response } from "express";
 import ApiError from "../utils/ApiError";
+import httpStatus from "http-status";
+import { connectionService } from "../services";
+import { commonKnex } from "../config/databse";
 
 declare global {
   namespace Express {
@@ -23,22 +23,46 @@ declare global {
   }
 }
 
-const namespace = createNamespace("tenants");
+interface Tenant {
+  tenantID: string;
+  name: string;
+  db_connection: {
+    host: string;
+    user: string;
+    password: string;
+    database: string;
+  };
+  active: boolean;
+}
 
-const connectionRequest = (req: Request, res: Response, next: NextFunction) => {
-  const tenantId = req.body.tenantID || req.user?.tenantID;
-  // Check if tenantID is present
+const connectionRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const { tenantID } = req.body as { tenantID: string };
+  const tenantId = tenantID || req.user?.tenantID;
   if (!tenantId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Tenant ID is required");
   }
+  try {
+    const tenant: Tenant | undefined = await commonKnex("tenants")
+      .where({
+        tenantID: tenantId,
+        active: true,
+      })
+      .first();
 
-  namespace.run(() => {
-    namespace.set(
-      "connection",
-      connectionService.getTenantConnection(tenantId),
+    if (!tenant) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Tenant not found");
+    }
+    connectionService.runWithTenantContext(tenant, () => next());
+  } catch (error) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to set tenant context",
     );
-    next();
-  });
+  }
 };
 
 export { connectionRequest };
