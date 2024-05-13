@@ -11,7 +11,7 @@ const verifyCallback =
     resolve: (value?: unknown) => void,
     reject: (reason?: any) => any,
     requiredRights: string[],
-    category: string,
+    category: string | null = null,
   ) =>
   async (err: any, user: any, info: any) => {
     if (err || info || !user) {
@@ -21,6 +21,10 @@ const verifyCallback =
     }
 
     req.user = user;
+
+    if (!category || requiredRights.length === 0) {
+      return resolve();
+    }
 
     if (user.role === "superAdmin") {
       return resolve();
@@ -68,7 +72,7 @@ const verifyCallback =
   };
 
 const auth =
-  (category: string, ...requiredRights: string[]) =>
+  (category: string | null = null, ...requiredRights: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     return new Promise((resolve, reject) => {
       passport.authenticate(

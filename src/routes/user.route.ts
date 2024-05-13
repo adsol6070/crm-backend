@@ -7,6 +7,8 @@ import { Permission } from "../config/permissions";
 
 const router = express.Router();
 
+router.get("/profile", userController.getUserProfile);
+
 router
   .route("/")
   .post(

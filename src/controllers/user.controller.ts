@@ -4,7 +4,15 @@ import { connectionService, userService } from "../services";
 import { Request, Response } from "express";
 import ApiError from "../utils/ApiError";
 
+const getUserProfile = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const userId = req.body.userId;
+  const userProfile = await userService.getUserProfile(connection, userId);
+  res.status(httpStatus.OK).json(userProfile);
+});
+
 const createUser = catchAsync(async (req: Request, res: Response) => {
+  console.log("Req.body:", req.body)
   const uploadedFile = req.file as any;
   const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.createUser(
@@ -63,6 +71,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 export default {
+  getUserProfile,
   createUser,
   getUser,
   getUsers,

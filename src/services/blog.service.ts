@@ -83,12 +83,16 @@ const getBlogImageById = async (connection: Knex, id: string) => {
 const updateBlogById = async (
   connection: Knex,
   blogId: string,
-  updateBody: Partial<Blog>,
+  updateData: Partial<Blog>,
   file?: UploadedFile,
 ): Promise<Blog> => {
+  const updatedBlogData = {
+    ...updateData,
+    ...(file && { blogImage: file.filename }),
+  };
   const updatedBlogs = await connection("blogs")
     .where({ id: blogId })
-    .update(updateBody)
+    .update(updatedBlogData)
     .returning("*");
   if (updatedBlogs.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "Blog not found after update");
@@ -112,8 +116,12 @@ const createBlogCategory = async (
   connection: Knex,
   blogCategory: BlogCategory,
 ): Promise<BlogCategory> => {
+  const updatedBlogCategory = {
+    ...blogCategory,
+    id: uuidv4(),
+  };
   const [insertedBlogCategory] = await connection("blogCategory")
-    .insert(blogCategory)
+    .insert(updatedBlogCategory)
     .returning("*");
   return insertedBlogCategory;
 };

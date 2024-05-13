@@ -7,7 +7,8 @@ const createBlog = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
   const connection = await connectionService.getCurrentTenantKnex();
   const blog = await blogService.createBlog(connection, req.body, uploadedFile);
-  res.status(httpStatus.CREATED).send(blog);
+  const message = "Blog created successfully.";
+  res.status(httpStatus.CREATED).json({ blog, message });
 });
 
 const getAllBlogs = catchAsync(async (req: Request, res: Response) => {
@@ -45,11 +46,8 @@ const updateBlogById = catchAsync(async (req: Request, res: Response) => {
     updateData,
     uploadedFile,
   );
-  if (updatedBlog) {
-    res.status(httpStatus.OK).send(updatedBlog);
-  } else {
-    res.status(httpStatus.NOT_FOUND).send({ message: "Blog not found" });
-  }
+  const message = "Blog updated successfully.";
+  res.status(httpStatus.OK).json({ updatedBlog, message });
 });
 
 const deleteBlogById = catchAsync(async (req: Request, res: Response) => {
