@@ -6,7 +6,7 @@ import {
 import config from "./config";
 import { tokenTypes } from "./tokens";
 import { connectionService } from "../services";
-import { commonKnex } from "./databse";
+import { commonKnex } from "./database";
 
 interface JwtPayload {
   sub: string;
@@ -21,12 +21,15 @@ const jwtVerify = async (payload: JwtPayload, done: VerifiedCallback) => {
     if (payload.type !== tokenTypes.ACCESS) {
       throw new Error("Invalid token type");
     }
+
+    console.log("Payload:", payload);
     const tenant = await commonKnex("tenants")
       .where({
         tenantID: payload.tenantID,
         active: true,
       })
       .first();
+    console.log("passport", tenant)
     const connection = await connectionService.getTenantKnex(tenant);
     const user = await connection("users").where({ id: payload.sub }).first();
     if (!user) {

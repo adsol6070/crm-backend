@@ -3,7 +3,7 @@ import catchAsync from "../utils/catchAsync";
 import { v4 as uuidv4 } from "uuid";
 import generator from "generate-password";
 import slugify from "slugify";
-import { commonKnex } from "../config/databse";
+import { commonKnex } from "../config/database";
 import { connectionService, tenantService } from "../services";
 import { Request, Response } from "express";
 import knex from "knex";

@@ -9,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
         table.uuid("tenantID").notNullable();
         table.string("title").notNullable();
         table.string("content").notNullable();
+        table.string("description").notNullable();
         table.string("category").notNullable();
         table.string("blogImage");
         table.timestamps(true, true);

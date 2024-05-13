@@ -35,7 +35,9 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 });
 
 const refreshTokens = catchAsync(async (req: Request, res: Response) => {
+  console.log("Refresh token get called.");
   const connection = await connectionService.getCurrentTenantKnex();
+  console.log("Connection received:", connection);
   const tokens = await authService.refreshAuth(
     connection,
     req.body.refresh_token,

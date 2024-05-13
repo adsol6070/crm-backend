@@ -9,9 +9,9 @@ const router = express.Router();
 
 router
   .route("/blogCategory")
-  .get(auth("manageBlogs"), connectionRequest, blogController.getBlogCategory)
+  .get(auth("Blogs", Permission.READ), connectionRequest, blogController.getBlogCategory)
   .post(
-    auth("manageBlogs"),
+    auth("Blogs", Permission.CREATE),
     connectionRequest,
     blogController.createBlogCategory,
   );
@@ -19,17 +19,17 @@ router
 router
   .route("/blogCategory/:blogCategoryId")
   .get(
-    auth("manageBlogs"),
+    auth("Blogs", Permission.READ),
     connectionRequest,
     blogController.getBlogCategoryById,
   )
   .patch(
-    auth("manageBlogs"),
+    auth("Blogs", Permission.UPDATE),
     connectionRequest,
     blogController.updateBlogCategory,
   )
   .delete(
-    auth("manageBlogs"),
+    auth("Blogs", Permission.DELETE),
     connectionRequest,
     blogController.deleteBlogByCategory,
   );
