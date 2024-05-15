@@ -11,7 +11,7 @@ interface Blog {
   content: string;
   category: string;
   blogImage?: string;
-  uploadType: string;
+  uploadType?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -40,8 +40,9 @@ const createBlog = async (
   blog: Blog,
   file?: UploadedFile,
 ): Promise<Blog> => {
+  const { uploadType, ...blogWithoutUploadType } = blog;
   const blogData: Blog = {
-    ...blog,
+    ...blogWithoutUploadType,
     id: uuidv4(),
     ...(file && { blogImage: file.filename }),
   };
@@ -74,7 +75,7 @@ const getBlogImageById = async (connection: Knex, id: string) => {
     "..",
     "uploads",
     blog.tenantID as string,
-    "general",
+    "Blog",
     blog.blogImage,
   );
   return image;

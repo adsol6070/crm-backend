@@ -7,7 +7,8 @@ import httpStatus from "http-status";
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
     const tenantId = req.body.tenantID;
-    const uploadType = req.body.uploadType || "general";
+    console.log(req.body)
+    const uploadType = req.body.uploadType || "General";
     const uploadPath = path.join(
       __dirname,
       "..",

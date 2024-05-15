@@ -19,6 +19,7 @@ interface User {
   email: string;
   password: string;
   phone: string;
+  uploadType?: string;
   profileImage?: string;
   isEmailVerified?: boolean;
   role?: string;
@@ -88,7 +89,7 @@ const getUserImageById = async (connection: Knex, id: string) => {
     "..",
     "uploads",
     user.tenantID as string,
-    "general",
+    "User",
     user.profileImage,
   );
   return image;
