@@ -3,7 +3,7 @@ import passport from "passport";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { connectionService, permissionsService } from "../services";
-import { commonKnex } from "../config/databse";
+import { commonKnex } from "../config/database";
 
 const verifyCallback =
   (
@@ -14,9 +14,10 @@ const verifyCallback =
     category: string | null = null,
   ) =>
   async (err: any, user: any, info: any) => {
+    console.log("Req.user:", req.user);
     if (err || info || !user) {
       return reject(
-        new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate"),
+        new ApiError(httpStatus.UNAUTHORIZED, "1 Please authenticate"),
       );
     }
 

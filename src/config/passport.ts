@@ -6,7 +6,7 @@ import {
 import config from "./config";
 import { tokenTypes } from "./tokens";
 import { connectionService } from "../services";
-import { commonKnex } from "./databse";
+import { commonKnex } from "./database";
 
 interface JwtPayload {
   sub: string;

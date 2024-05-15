@@ -1,5 +1,5 @@
 import { knex } from "knex";
-import { config, commonKnex } from "./databse";
+import { config, commonKnex } from "./database";
 
 interface Tenant {
   tenantID: string;

@@ -12,7 +12,6 @@ const getUserProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
-  console.log("Req.body:", req.body)
   const uploadedFile = req.file as any;
   const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.createUser(

@@ -5,6 +5,7 @@ import httpStatus from "http-status";
 import commonService from "./common.service";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { commonKnex } from "../config/database";
 
 interface DatabaseError extends Error {
   code?: string;
@@ -85,7 +86,16 @@ const createUser = async (
       isEmailVerified: user.isEmailVerified ?? false,
       role: user.role ?? "user",
     };
+    const commonUser = {
+      id: uuidv4(),
+      tenantID: user.tenantID ?? tenantID,
+      email: user.email,
+    };
+
+    console.log("Inserted User:", insertedUser);
+    console.log("Common User:", commonUser);
     await connection("users").insert(insertedUser);
+    await commonKnex("users").insert(commonUser);
     return insertedUser;
   } catch (error: DatabaseError | any) {
     throw new ApiError(httpStatus.BAD_REQUEST, error.message);
@@ -146,7 +156,7 @@ const updateUserById = async (
   }
 
   if (updateBody.password) {
-    updateBody.password = await bcrypt.hash(user.password, 8);
+    updateBody.password = await bcrypt.hash(updateBody.password, 8);
   }
 
   if (file) {
@@ -157,7 +167,7 @@ const updateUserById = async (
     (acc, [key, value]) => {
       if (value !== undefined) {
         const userKey: keyof User = key as keyof User;
-        acc[userKey] = value as any; // Ensure the key is a valid keyof User
+        acc[userKey] = value as any;
       }
       return acc;
     },

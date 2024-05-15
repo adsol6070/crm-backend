@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "async_hooks";
 import knex, { Knex } from "knex";
 import logger from "../config/logger";
-import { config, commonKnex } from "../config/databse";
+import { config, commonKnex } from "../config/database";
 
 interface Tenant {
   tenantID?: string;
