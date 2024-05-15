@@ -38,6 +38,32 @@ interface UploadedFile {
   size: number;
 }
 
+const getUserProfile = async (
+  connection: Knex,
+  userId: string,
+): Promise<SafeUser> => {
+  const user = await connection("users")
+    .select(
+      "id",
+      "tenantID",
+      "firstname",
+      "lastname",
+      "email",
+      "phone",
+      "profileImage",
+      "isEmailVerified",
+      "role",
+    )
+    .where({ id: userId })
+    .first();
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  return user;
+};
+
 const createUser = async (
   connection: Knex,
   user: User,
@@ -66,7 +92,10 @@ const createUser = async (
       id: id,
       tenantID: user.tenantID ?? tenantID,
       email: user.email,
-    }
+    };
+
+    console.log("Inserted User:", insertedUser);
+    console.log("Common User:", commonUser);
     await connection("users").insert(insertedUser);
     await commonKnex("users").insert(commonUser);
     return insertedUser;
@@ -188,6 +217,7 @@ const deleteUserById = async (connection: Knex, userId: string) => {
 };
 
 export default {
+  getUserProfile,
   createUser,
   getUserByID,
   getUserImageById,

@@ -91,7 +91,6 @@ const updateBlogById = async (
     ...updateData,
     ...(file && { blogImage: file.filename }),
   };
-
   const updatedBlogs = await connection("blogs")
     .where({ id: blogId })
     .update(updatedBlogData)
@@ -121,7 +120,7 @@ const createBlogCategory = async (
   const updatedBlogCategory = {
     ...blogCategory,
     id: uuidv4(),
-  };
+  };
   const [insertedBlogCategory] = await connection("blogCategory")
     .insert(updatedBlogCategory)
     .returning("*");
