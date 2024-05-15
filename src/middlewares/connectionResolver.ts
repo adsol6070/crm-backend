@@ -38,13 +38,11 @@ interface Tenant {
 // Function to find tenant by tenantID or email
 async function findTenant(tenantID: string | undefined, userEmail: string | undefined): Promise<Tenant | null> {
   if (tenantID) {
-    console.log("Looking up tenant by tenantID:", tenantID);
     const tenant = await commonKnex("tenants")
       .where({ tenantID, active: true })
       .first();
     return tenant || null;
   } else if (userEmail) {
-    console.log("Looking up tenant by user email:", userEmail);
     const tenant = await commonKnex("users")
       .join("tenants", "users.tenantID", "tenants.tenantID")
       .where("users.email", userEmail)
@@ -67,7 +65,7 @@ const connectionRequest = async (req: Request, res: Response, next: NextFunction
       throw new ApiError(httpStatus.NOT_FOUND, `Tenant not found using ${tenantID ? "tenantID" : "email"}`);
     }
 
-    console.log("Successfully found tenant:", tenant.name, "at", new Date().toISOString());
+    // console.log("Successfully found tenant:", tenant.name, "at", new Date().toISOString());
     connectionService.runWithTenantContext(tenant, () => next());
   } catch (error) {
     console.error("Failed to set tenant context:", error);

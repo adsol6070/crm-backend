@@ -17,7 +17,6 @@ interface Newdata {
   db_name: string;
   db_username: string;
   db_password: string;
-  // Add more properties as needed
 }
 interface GetTenant {
   uuid: string;

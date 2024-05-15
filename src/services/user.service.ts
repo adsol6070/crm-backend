@@ -74,8 +74,9 @@ const createUser = async (
       throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);
+    const id = uuidv4()
     const insertedUser = {
-      id: uuidv4(),
+      id: id,
       tenantID: user.tenantID ?? tenantID,
       firstname: user.firstname,
       lastname: user.lastname,
@@ -87,7 +88,7 @@ const createUser = async (
       role: user.role ?? "user",
     };
     const commonUser = {
-      id: uuidv4(),
+      id: id,
       tenantID: user.tenantID ?? tenantID,
       email: user.email,
     };
@@ -174,15 +175,31 @@ const updateUserById = async (
     {} as Partial<User>,
   );
 
+  console.log("Updated User:", updates);
+
   const updatedUser = await connection("users")
     .where({ id: userId })
     .update(updates)
     .returning("*");
 
+  console.log("Updated User 2:", updatedUser);
+
+  const commonUpdates = {
+    email: updates.email,
+    tenantID: updates.tenantID,
+  };
+
+  await commonKnex('users')
+    .where({ id: userId })
+    .update(commonUpdates)
+    .returning('*');
   if (updatedUser.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found after update");
   }
+
   return updatedUser[0];
+
+
 };
 
 const deleteUserById = async (connection: Knex, userId: string) => {
@@ -191,6 +208,7 @@ const deleteUserById = async (connection: Knex, userId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
   const deletedCount = await connection("users").where({ id: userId }).delete();
+  await commonKnex("users").where({ id: userId }).delete();
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No user found to delete");
   }
