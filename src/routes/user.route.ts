@@ -7,7 +7,13 @@ import { Permission } from "../config/permissions";
 
 const router = express.Router();
 
-router.get("/profile", userController.getUserProfile);
+router.post("/profile", auth(), connectionRequest, userController.getUserProfile);
+router.get(
+  "/profile/:userId/image",
+  auth(),
+  connectionRequest,
+  userController.getUserImage,
+);
 
 router
   .route("/")

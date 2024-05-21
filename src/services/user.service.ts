@@ -19,6 +19,7 @@ interface User {
   email: string;
   password: string;
   phone: string;
+  uploadType?: string;
   profileImage?: string;
   isEmailVerified?: boolean;
   role?: string;
@@ -92,9 +93,6 @@ const createUser = async (
       tenantID: user.tenantID ?? tenantID,
       email: user.email,
     };
-
-    console.log("Inserted User:", insertedUser);
-    console.log("Common User:", commonUser);
     await connection("users").insert(insertedUser);
     await commonKnex("users").insert(commonUser);
     return insertedUser;
@@ -117,7 +115,7 @@ const getUserImageById = async (connection: Knex, id: string) => {
     "..",
     "uploads",
     user.tenantID as string,
-    "general",
+    "User",
     user.profileImage,
   );
   return image;
@@ -151,20 +149,21 @@ const updateUserById = async (
   updateBody: Partial<User>,
   file?: UploadedFile,
 ) => {
+  const { uploadType, ...filteredUpdateBody } = updateBody;
   const user = await getUserByID(connection, userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  if (updateBody.password) {
-    updateBody.password = await bcrypt.hash(updateBody.password, 8);
+  if (filteredUpdateBody.password) {
+    filteredUpdateBody.password = await bcrypt.hash(filteredUpdateBody.password, 8);
   }
 
   if (file) {
-    updateBody.profileImage = file.filename;
+    filteredUpdateBody.profileImage = file.filename;
   }
 
-  const updates = Object.entries(updateBody).reduce<Partial<User>>(
+  const updates = Object.entries(filteredUpdateBody).reduce<Partial<User>>(
     (acc, [key, value]) => {
       if (value !== undefined) {
         const userKey: keyof User = key as keyof User;
@@ -175,14 +174,10 @@ const updateUserById = async (
     {} as Partial<User>,
   );
 
-  console.log("Updated User:", updates);
-
   const updatedUser = await connection("users")
     .where({ id: userId })
     .update(updates)
     .returning("*");
-
-  console.log("Updated User 2:", updatedUser);
 
   const commonUpdates = {
     email: updates.email,
