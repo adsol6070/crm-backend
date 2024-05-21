@@ -87,8 +87,9 @@ const updateBlogById = async (
   updateData: Partial<Blog>,
   file?: UploadedFile,
 ): Promise<Blog> => {
+  const { uploadType, ...updateBlogWithoutUploadType } = updateData;
   const updatedBlogData = {
-    ...updateData,
+    ...updateBlogWithoutUploadType,
     ...(file && { blogImage: file.filename }),
   };
   const updatedBlogs = await connection("blogs")
