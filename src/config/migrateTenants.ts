@@ -1,5 +1,6 @@
 import { knex } from "knex";
 import { config, commonKnex } from "./database";
+import logger from "./logger";
 
 interface Tenant {
   tenantID: string;
@@ -31,7 +32,7 @@ const migrateTenant = async (
   });
 
   try {
-    console.log(`Migrating tenant (${direction}): ${tenant.name}`);
+    logger.info(`Migrating tenant (${direction}): ${tenant.name}`);
     if (direction === "down") {
       if (specificMigration) {
         await tenantKnex.migrate.down({ name: specificMigration });
@@ -41,9 +42,11 @@ const migrateTenant = async (
     } else {
       await tenantKnex.migrate.latest();
     }
-    console.log(`Migration completed for ${tenant.name}`);
+    logger.info(`Migration completed for ${tenant.name}`);
   } catch (error) {
-    console.error(`Failed to migrate ${tenant.name}: ${(error as Error).message}`);
+    console.error(
+      `Failed to migrate ${tenant.name}: ${(error as Error).message}`,
+    );
   } finally {
     await tenantKnex.destroy();
   }
@@ -62,7 +65,9 @@ const runMigrations = async (
       await migrateTenant(tenant, direction, specificMigration);
     }
   } catch (error) {
-    console.error(`Error running tenant migrations: ${(error as Error).message}`);
+    console.error(
+      `Error running tenant migrations: ${(error as Error).message}`,
+    );
   } finally {
     await commonKnex.destroy();
   }

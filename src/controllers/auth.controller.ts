@@ -54,7 +54,13 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  // await authService.resetPassword(req.query.token, req.body.password);
+  const connection = await connectionService.getCurrentTenantKnex();
+  await authService.resetPassword(
+    connection,
+    req.body.token,
+    req.body.password,
+  );
+  res.status(httpStatus.NO_CONTENT).send();
 });
 
 export default {

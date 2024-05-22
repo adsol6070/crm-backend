@@ -35,8 +35,10 @@ interface Tenant {
   active: boolean;
 }
 
-// Function to find tenant by tenantID or email
-async function findTenant(tenantID: string | undefined, userEmail: string | undefined): Promise<Tenant | null> {
+const findTenant = async (
+  tenantID: string | undefined,
+  userEmail: string | undefined,
+): Promise<Tenant | null> => {
   if (tenantID) {
     const tenant = await commonKnex("tenants")
       .where({ tenantID, active: true })
@@ -47,14 +49,23 @@ async function findTenant(tenantID: string | undefined, userEmail: string | unde
       .join("tenants", "users.tenantID", "tenants.tenantID")
       .where("users.email", userEmail)
       .andWhere("tenants.active", true)
-      .select("tenants.tenantID", "tenants.name", "tenants.db_connection", "tenants.active")
+      .select(
+        "tenants.tenantID",
+        "tenants.name",
+        "tenants.db_connection",
+        "tenants.active",
+      )
       .first();
     return tenant || null;
   }
   return null;
-}
+};
 
-const connectionRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+const connectionRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const tenantID = req.body.tenantID;
   const userEmail = req.body.email || req.user?.email;
 
@@ -62,14 +73,19 @@ const connectionRequest = async (req: Request, res: Response, next: NextFunction
     const tenant = await findTenant(tenantID, userEmail);
 
     if (!tenant) {
-      throw new ApiError(httpStatus.NOT_FOUND, `Tenant not found using ${tenantID ? "tenantID" : "email"}`);
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        `Tenant not found using ${tenantID ? "tenantID" : "email"}`,
+      );
     }
-
-    // console.log("Successfully found tenant:", tenant.name, "at", new Date().toISOString());
     connectionService.runWithTenantContext(tenant, () => next());
   } catch (error) {
-    console.error("Failed to set tenant context:", error);
-    next(new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to set tenant context"));
+    next(
+      new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to set tenant context",
+      ),
+    );
   }
 };
 

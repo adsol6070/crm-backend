@@ -75,7 +75,7 @@ const createUser = async (
       throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);
-    const id = uuidv4()
+    const id = uuidv4();
     const insertedUser = {
       id: id,
       tenantID: user.tenantID ?? tenantID,
@@ -156,7 +156,10 @@ const updateUserById = async (
   }
 
   if (filteredUpdateBody.password) {
-    filteredUpdateBody.password = await bcrypt.hash(filteredUpdateBody.password, 8);
+    filteredUpdateBody.password = await bcrypt.hash(
+      filteredUpdateBody.password,
+      8,
+    );
   }
 
   if (file) {
@@ -179,22 +182,23 @@ const updateUserById = async (
     .update(updates)
     .returning("*");
 
-  const commonUpdates = {
-    email: updates.email,
-    tenantID: updates.tenantID,
-  };
+  if (updates.email && updates.tenantID) {
+    const commonUpdates = {
+      email: updates.email,
+      tenantID: updates.tenantID,
+    };
 
-  await commonKnex('users')
-    .where({ id: userId })
-    .update(commonUpdates)
-    .returning('*');
+    await commonKnex("users")
+      .where({ id: userId })
+      .update(commonUpdates)
+      .returning("*");
+  }
+
   if (updatedUser.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found after update");
   }
 
   return updatedUser[0];
-
-
 };
 
 const deleteUserById = async (connection: Knex, userId: string) => {
