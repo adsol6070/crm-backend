@@ -2,6 +2,8 @@ import { app } from "./app";
 import logger from "./config/logger";
 import config from "./config/config";
 import { connectionService } from "./services";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 let server: any;
 
@@ -9,6 +11,28 @@ const startServer = async () => {
   try {
     await connectionService.createCommonDatabase();
     logger.info("Connected Successfully");
+
+    const httpServer = createServer(app);
+    const io = new Server(httpServer, {
+      cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"],
+      },
+    });
+
+    io.use(async (socket, next) => {
+      const token = socket.handshake.auth.token;
+      if (!token) {
+        return;
+      }
+
+      try {
+       
+      } catch (error) {
+        
+      }
+    });
+
     server = app.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);
     });
