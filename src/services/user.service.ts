@@ -71,7 +71,7 @@ const createUser = async (
   tenantID?: string,
 ) => {
   try {
-    if (await commonService.isEmailTaken(connection, user.email)) {
+    if (await commonService.isEmailTaken(connection, "users" , user.email)) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);

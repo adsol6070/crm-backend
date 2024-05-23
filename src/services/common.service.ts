@@ -3,9 +3,10 @@ import bcrypt from "bcryptjs";
 
 const isEmailTaken = async (
   connection: Knex,
+  tableName: string,
   email: string,
 ): Promise<boolean> => {
-  const user = await connection("users").where({ email }).first();
+  const user = await connection(tableName).where({ email }).first();
   return !!user;
 };
 

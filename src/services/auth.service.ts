@@ -12,11 +12,6 @@ const loginWithEmailAndPassword = async (
   password: string,
 ) => {
   const user = await connection("users").where({ email }).first();
-  console.log(user)
-  const passwordCheck = await commonService.isPasswordMatch(password, user.password)
-  console.log(passwordCheck)
-  console.log(password)
-  console.log(user.password)
   if (
     !user ||
     !(await commonService.isPasswordMatch(password, user.password))

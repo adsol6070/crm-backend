@@ -2,6 +2,7 @@ import { Knex } from "knex";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { v4 as uuidv4 } from "uuid";
+import commonService from "./common.service";
 
 interface Lead {
   id?: string;
@@ -17,13 +18,16 @@ interface Lead {
 }
 
 const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
-  const leadData = { ...lead };
-  leadData.id = uuidv4();
-  const [insertedLead] = await connection("leads")
+  const leadEmail = await commonService.isEmailTaken(connection, "leads" , lead.email)
+  if (leadEmail) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+  }
+    const leadData = { ...lead };
+    leadData.id = uuidv4();
+    const [insertedLead] = await connection("leads")
     .insert(leadData)
     .returning("*");
-
-  return insertedLead;
+    return insertedLead;
 };
 
 const getAllLeads = async (connection: Knex): Promise<Lead[]> => {
