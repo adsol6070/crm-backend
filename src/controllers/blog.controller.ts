@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { blogService, connectionService } from "../services";
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
+import path from 'path';
+import fs from 'fs';
 
 const createBlog = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
@@ -21,6 +23,7 @@ const getBlogById = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
   const blog = await blogService.getBlogById(connection, blogId);
+  console.log(blog)
   if (blog) {
     res.status(httpStatus.OK).send(blog);
   } else {
@@ -39,6 +42,16 @@ const updateBlogById = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
   const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
+  const getBlog = await blogService.getBlogById(connection, blogId);
+  const blogImage = getBlog.blogImage as string;
+
+  const filePath = path.join(__dirname, "..", 'uploads', getBlog.tenantID, 'Blog', blogImage);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+
+  fs.unlinkSync(filePath);
   const updateData = req.body;
   const updatedBlog = await blogService.updateBlogById(
     connection,
@@ -53,7 +66,19 @@ const updateBlogById = catchAsync(async (req: Request, res: Response) => {
 const deleteBlogById = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const blogId = req.params.blogId;
+  const getBlog = await blogService.getBlogById(connection, blogId);
+  const blogImage = getBlog.blogImage as string;
+
+  const filePath = path.join(__dirname, "..", 'uploads', getBlog.tenantID, 'Blog', blogImage);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+
+  fs.unlinkSync(filePath);
+
   const deletedCount = await blogService.deleteBlogById(connection, blogId);
+
   if (deletedCount) {
     res.status(httpStatus.NO_CONTENT).send();
   } else {
@@ -118,6 +143,7 @@ const deleteBlogByCategory = catchAsync(async (req: Request, res: Response) => {
     connection,
     blogCategoryId,
   );
+
   if (deletedCount) {
     res.status(httpStatus.NO_CONTENT).send();
   } else {

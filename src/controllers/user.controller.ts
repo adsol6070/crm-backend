@@ -7,7 +7,6 @@ import ApiError from "../utils/ApiError";
 const getUserProfile = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const userId = req.body.userId;
-  console.log("user controller ", userId)
   const userProfile = await userService.getUserProfile(connection, userId);
   res.status(httpStatus.OK).json(userProfile);
 });
