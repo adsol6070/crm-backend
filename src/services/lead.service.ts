@@ -239,9 +239,6 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Pr
 
 const getLeadDocumentsById = async (connection: Knex, leadID: string): Promise<any> => {
   const leadDocument = await connection("document_checklists").where({ leadID }).first();
-  if (!leadDocument) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Lead Documents not found");
-  }
   return leadDocument;
 };
 
