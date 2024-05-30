@@ -14,7 +14,6 @@ const verifyCallback =
     category: string | null = null,
   ) =>
   async (err: any, user: any, info: any) => {
-    console.log("Req.user:", req.user);
     if (err || info || !user) {
       return reject(
         new ApiError(httpStatus.UNAUTHORIZED, "1 Please authenticate"),

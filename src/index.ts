@@ -3,8 +3,9 @@ import logger from "./config/logger";
 import config from "./config/config";
 import { connectionService } from "./services";
 import { createServer } from "http";
-import { Server } from "socket.io";
+import { setupChatSocket } from "./sockets/chatSocket";
 
+// Define server and custom socket interface
 let server: any;
 
 const startServer = async () => {
@@ -13,31 +14,14 @@ const startServer = async () => {
     logger.info("Connected Successfully");
 
     const httpServer = createServer(app);
-    const io = new Server(httpServer, {
-      cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST"],
-      },
-    });
 
-    io.use(async (socket, next) => {
-      const token = socket.handshake.auth.token;
-      if (!token) {
-        return;
-      }
+    setupChatSocket(httpServer);
 
-      try {
-       
-      } catch (error) {
-        
-      }
-    });
-
-    server = app.listen(config.port, () => {
+    server = httpServer.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);
     });
   } catch (error) {
-    logger.error(`Error connecting to MongoDB: ${error}`);
+    logger.error(`Error starting server: ${error}`);
     process.exit(1);
   }
 };

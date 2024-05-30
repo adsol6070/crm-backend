@@ -3,16 +3,16 @@ import type { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
   try {
     await knex.schema.createTable(
-      "blogs",
+      "groups",
       function (table: Knex.CreateTableBuilder) {
         table.uuid("id").primary();
-        table.uuid("tenantID").notNullable();
-        table.text("title").notNullable();
-        table.text("content").notNullable();
-        table.text("description").notNullable();
-        table.text("category").notNullable();
-        table.string("blogImage");
-        table.timestamps(true, true);
+        table.string("name", 255).notNullable();
+        table
+          .uuid("creator_id")
+          .references("id")
+          .inTable("users")
+          .onDelete("CASCADE");
+        table.timestamp("created_at").defaultTo(knex.fn.now());
       },
     );
   } catch (error) {
@@ -22,7 +22,7 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   try {
-    await knex.schema.dropTable("blogs");
+    await knex.schema.dropTable("groups");
   } catch (error) {
     throw error;
   }

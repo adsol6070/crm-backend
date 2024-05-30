@@ -53,6 +53,7 @@ const getUserProfile = async (
       "profileImage",
       "isEmailVerified",
       "role",
+      "online"
     )
     .where({ id: userId })
     .first();
