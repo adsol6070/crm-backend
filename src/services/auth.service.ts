@@ -32,7 +32,7 @@ const logout = async (connection: Knex, refreshToken: string) => {
     .first();
 
   if (!refreshTokenDoc) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Not found");
+    return;
   }
 
   await connection("tokens").where({ id: refreshTokenDoc.id }).del();
@@ -63,10 +63,29 @@ const refreshAuth = async (connection: Knex, refreshToken: string) => {
 };
 
 const resetPassword = async (
+  connection: Knex,
   resetPasswordToken: string,
   newPassword: string,
 ) => {
   try {
+    const resetPasswordTokenDoc = await tokenService.verifyToken(
+      connection,
+      resetPasswordToken,
+      tokenTypes.RESET_PASSWORD,
+    );
+    const user = await userService.getUserByID(
+      connection,
+      resetPasswordTokenDoc.user,
+    );
+    if (!user) {
+      throw new Error();
+    }
+    await userService.updateUserById(connection, user.id, {
+      password: newPassword,
+    });
+    await connection("tokens")
+      .where({ user: user.id, type: tokenTypes.RESET_PASSWORD })
+      .del();
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Password reset failed");
   }

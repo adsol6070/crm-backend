@@ -2,18 +2,26 @@ import { app } from "./app";
 import logger from "./config/logger";
 import config from "./config/config";
 import { connectionService } from "./services";
+import { createServer } from "http";
+import { setupChatSocket } from "./sockets/chatSocket";
 
+// Define server and custom socket interface
 let server: any;
 
 const startServer = async () => {
   try {
     await connectionService.createCommonDatabase();
     logger.info("Connected Successfully");
-    server = app.listen(config.port, () => {
+
+    const httpServer = createServer(app);
+
+    setupChatSocket(httpServer);
+
+    server = httpServer.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);
     });
   } catch (error) {
-    logger.error(`Error connecting to MongoDB: ${error}`);
+    logger.error(`Error starting server: ${error}`);
     process.exit(1);
   }
 };

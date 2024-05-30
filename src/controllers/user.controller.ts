@@ -52,7 +52,6 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
-  console.log("Update Controller", req.body)
   const connection = await connectionService.getCurrentTenantKnex();
   await userService.updateUserById(
     connection,
