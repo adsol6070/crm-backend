@@ -9,6 +9,7 @@ import fs from 'fs';
 
 interface Lead {
   id: string;
+  userID: string;
   tenantID: string;
   firstname: string;
   lastname: string;
@@ -109,15 +110,14 @@ const deleteLeadById = catchAsync(async (req: Request, res: Response) => {
 
   const leadDocuments = await leadService.getLeadDocumentsById(connection, leadId);
 
-  if (leadDocuments && leadDocuments.tenantID) {
+  if (leadDocuments !== undefined) {
     const folderPath = path.join(__dirname, "..", 'uploads', leadDocuments.tenantID, `leadDocuments-${leadId}`);
 
     if (fs.existsSync(folderPath)) {
       fs.rmSync(folderPath, { recursive: true });
     }
+    await leadService.deleteDocuments(connection, leadId);
   }
-
-  await leadService.deleteDocuments(connection, leadId);
 
   const deletedCount = await leadService.deleteLeadById(connection, leadId);
   if (deletedCount) {
@@ -243,6 +243,45 @@ const getSingleDocuments = catchAsync(async (req: Request, res: Response) => {
   readStream.pipe(res);
 });
 
+const updateSingleDocuments = catchAsync(async (req: Request, res: Response) => {
+  const { leadId, filename } = req.params;
+  const { file } = req;
+
+  if (!file) {
+    return res.status(httpStatus.BAD_REQUEST).json({ message: 'No file uploaded' });
+  }
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadDocuments = await leadService.getLeadDocumentsById(connection, leadId);
+
+  const documentIndex = leadDocuments.documents.findIndex((doc: any) => doc.filename === filename);
+  console.log("DocumentIndex:", documentIndex);
+
+  if (documentIndex === -1) {
+    return res.status(404).json({ message: 'Document not found' });
+  }
+
+  const oldFilePath = path.join(__dirname, "..", 'uploads', leadDocuments.tenantID, `leadDocuments-${leadDocuments.leadID}`, filename);
+  console.log("OldFilePath:", oldFilePath);
+
+  if (fs.existsSync(oldFilePath)) {
+    fs.unlinkSync(oldFilePath);
+  }
+
+  leadDocuments.documents[documentIndex] = {
+    name: req.body.name,
+    originalname: file.originalname,
+    filename: file.filename,
+    path: file.path,
+    mimetype: file.mimetype,
+    size: file.size
+  }
+
+  await leadService.updateLeadDocuments(connection, leadId, leadDocuments);
+
+  res.status(httpStatus.OK).json({ message: 'Document updated successfully', document: leadDocuments.documents[documentIndex] });
+});
+
 const deleteSingleDocument = catchAsync(async (req: Request, res: Response) => {
   const { leadId, filename } = req.params;
   const connection = await connectionService.getCurrentTenantKnex();
@@ -342,6 +381,88 @@ const uploadLeadChecklists = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.CREATED).json({ message });
 });
 
+const getAllAssignes = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadAssignes = await leadService.getAllAssigne(connection);
+  res.status(httpStatus.OK).send(leadAssignes);
+});
+
+const getLeadAssigneeById = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const lead_id = req.params.leadId;
+  const leadAssignes = await leadService.getAssigneById(connection, lead_id);
+  res.status(httpStatus.OK).send(leadAssignes);
+});
+
+const assignLead = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const data = await leadService.assignLead(connection, req.body);
+  res.status(httpStatus.CREATED).json({ assignLeadData: data.response, message: data.message });
+});
+
+const getLeadHistory = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadId = req.params.leadId;
+  const leadHitsory = await leadService.getLeadHistory(connection, leadId);
+  res.status(httpStatus.OK).send(leadHitsory);
+});
+
+const createLeadNote = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadId = req.params.leadId;
+  const leadNoteData = {
+    ...req.body,
+    lead_id: leadId,
+  } 
+  const leadNote = await leadService.createLeadNote(connection, leadNoteData);
+  const message = "Lead Note created successfully.";
+  res.status(httpStatus.CREATED).json({ leadNote, message });
+});
+
+const getNotes = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadId = req.params.leadId;
+  const leadNotes = await leadService.getLeadNotes(connection, leadId);
+  res.status(httpStatus.OK).send(leadNotes);
+});
+
+const getAllLeadNotes = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadId = req.params.leadId;
+  const leadNotes = await leadService.getLeadNotes(connection, leadId);
+  res.status(httpStatus.OK).send(leadNotes);
+});
+
+const getNoteById = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const noteId = req.params.noteId;
+  const leadNote = await leadService.getLeadNoteById(connection, noteId);
+  res.status(httpStatus.OK).send(leadNote);
+});
+
+const updateLeadNote = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const noteId = req.params.noteId;
+  const updatedLeadNote = await leadService.updateLeadNoteById(connection, noteId, req.body);
+  const message = "Lead Note updated successfully.";
+  res.status(httpStatus.CREATED).json({ updatedLeadNote, message });
+});
+
+const deleteLeadNoteById = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const noteId = req.params.noteId;
+  console.log("lead note id ", noteId)
+  await leadService.deleteLeadNoteById(connection, noteId);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const deleteAllNotes = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadId = req.params.leadId;
+ await leadService.deleteAllLeadNotes(connection, leadId);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
 
 export default {
   createLead,
@@ -358,7 +479,19 @@ export default {
   getLeadDocumentsZip,
   getDocuments,
   getSingleDocuments,
+  updateSingleDocuments,
   deleteDocuments,
   deleteSingleDocument,
   uploadLeadChecklists,
+  getAllAssignes,
+  assignLead,
+  getLeadAssigneeById,
+  getLeadHistory,
+  createLeadNote,
+  getAllLeadNotes,
+  getNotes,
+  getNoteById,
+  updateLeadNote,
+  deleteLeadNoteById,
+  deleteAllNotes,
 };

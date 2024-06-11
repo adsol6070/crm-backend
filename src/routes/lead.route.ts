@@ -45,6 +45,23 @@ router
   );
 
 router
+  .route("/leadAssignee")
+  .get(auth("getLeadAssignes"), connectionRequest, leadController.getAllAssignes)
+  .post(auth("manageAssignes"),
+    connectionRequest,
+    leadController.assignLead,
+  );
+
+
+router
+  .route("/leadAssignee/:leadId")
+  .get(auth("getLeadAssignes"), connectionRequest, leadController.getLeadAssigneeById);
+
+router
+  .route("/leadHistory/:leadId")
+  .get(auth("manageLeads"), connectionRequest, leadController.getLeadHistory);
+
+router
   .route("/importLeads")
   .post(auth("manageLeads"),
     upload.single("leadFile"),
@@ -70,6 +87,8 @@ router
 router
   .route("/getSingleDocument/:leadId/:filename")
   .get(auth("manageLeads"), connectionRequest, leadController.getSingleDocuments)
+  .patch(auth("manageLeads"), upload.single('documents'), connectionRequest, leadController.updateSingleDocuments
+  )
   .delete(auth("manageLeads"), connectionRequest, leadController.deleteSingleDocument);
 
 router
@@ -86,5 +105,28 @@ router
     leadController.deleteLeadById,
   );
 
+router
+  .route("/leadNotes/:leadId")
+  .get(auth("getLeads"), connectionRequest, leadController.getNotes)
+  .post(auth("manageLeads"), connectionRequest, leadController.createLeadNote)
+  .patch(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.updateLeadNote,
+  )
+  .delete(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.deleteAllNotes,
+  );
+
+  router
+  .route("/leadNote/:noteId")
+  .patch(auth("manageLeads"), connectionRequest, leadController.updateLeadNote)
+  .delete(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.deleteLeadNoteById,
+  );
 
 export default router;

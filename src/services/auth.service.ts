@@ -22,6 +22,7 @@ const loginWithEmailAndPassword = async (
 };
 
 const logout = async (connection: Knex, refreshToken: string) => {
+  console.log("logout token 1", refreshToken)
   const refreshTokenDoc = await connection("tokens")
     .select("*")
     .where({
@@ -30,12 +31,13 @@ const logout = async (connection: Knex, refreshToken: string) => {
       blacklisted: false,
     })
     .first();
-
+    console.log("logout token 2", refreshTokenDoc)
   if (!refreshTokenDoc) {
     return;
   }
 
-  await connection("tokens").where({ id: refreshTokenDoc.id }).del();
+  const reponse = await connection("tokens").where({ id: refreshTokenDoc.id }).del();
+  console.log("logout token 3", reponse)
 };
 
 const refreshAuth = async (connection: Knex, refreshToken: string) => {
