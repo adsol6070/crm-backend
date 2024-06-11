@@ -9,7 +9,11 @@ const router = express.Router();
 
 router
   .route("/blogCategory")
-  .get(auth("Blogs", Permission.READ), connectionRequest, blogController.getBlogCategory)
+  .get(
+    auth("Blogs", Permission.READ),
+    connectionRequest,
+    blogController.getBlogCategory,
+  )
   .post(
     auth("Blogs", Permission.CREATE),
     connectionRequest,
@@ -47,6 +51,7 @@ router
     connectionRequest,
     blogController.createBlog,
   );
+
 router.get(
   "/:blogId/image",
   auth("Blogs", Permission.READ),

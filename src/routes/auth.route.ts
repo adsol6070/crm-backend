@@ -7,7 +7,7 @@ import { auth } from "../middlewares/auth";
 const router = express.Router();
 
 router.use("/register", upload.single("profileImage"));
-router.use("/logout", auth());
+// router.use("/logout", auth());
 router.use(connectionRequest);
 
 router.post("/register", authController.register);

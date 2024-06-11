@@ -5,6 +5,7 @@ import tenantRoute from "./tenant.route";
 import blogRoute from "./blog.route";
 import leadRoute from "./lead.route";
 import permissionsRoute from "./permissions.route";
+import chatRoute from "./chat.route";
 
 const router = express.Router();
 const defaultRoutes = [
@@ -31,6 +32,10 @@ const defaultRoutes = [
   {
     path: "/permissions",
     route: permissionsRoute,
+  },
+  {
+    path: "/chat",
+    route: chatRoute,
   },
 ];
 
