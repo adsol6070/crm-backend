@@ -55,7 +55,7 @@ interface Lead {
   followUpDates?: string;
   leadRating?: string;
   leadNotes?: string;
-  leadHistory?: { action: string; timestamp: string; }[];
+  leadHistory?: { action: string; timestamp: string }[];
   created_at?: string;
   updated_at?: string;
 }
@@ -117,9 +117,9 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   const passportExpiry = leadData.passportExpiry === '' ? null : leadData.passportExpiry;
 
   const leadHistoryEntry = {
-    action: 'Created',
+    action: "Created",
     timestamp: new Date().toISOString(),
-    details: { createdBy: lead.userID }
+    details: { createdBy: lead.userID },
   };
 
   const correctedData = {
@@ -127,10 +127,10 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
     id: uuidv4(),
     visaCategory: String(leadData.visaCategory).toLowerCase(),
     passportExpiry: passportExpiry,
-    leadHistory: JSON.stringify([leadHistoryEntry])
-  }
+    leadHistory: JSON.stringify([leadHistoryEntry]),
+  };
 
-  console.log(correctedData)
+  console.log(correctedData);
   const [insertedLead] = await connection("leads")
     .insert(correctedData)
     .returning("*");
@@ -189,22 +189,23 @@ const updateLeadById = async (
     },
     {} as Partial<Lead>,
   );
-  const passportExpiry = updates.passportExpiry === '' ? null : updates.passportExpiry
+  const passportExpiry =
+    updates.passportExpiry === "" ? null : updates.passportExpiry;
 
-  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
+  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> =
+    [];
   if (lead.leadHistory) {
-    if (typeof lead.leadHistory === 'string') {
+    if (typeof lead.leadHistory === "string") {
       leadHistory = JSON.parse(lead.leadHistory);
-    }
-    else {
+    } else {
       leadHistory = lead.leadHistory;
     }
   }
 
   leadHistory.push({
-    action: 'Updated',
+    action: "Updated",
     timestamp: new Date().toISOString(),
-    details: { updatedBy: updates.userID }
+    details: { updatedBy: updates.userID },
   });
 
   const { userID, ...updatedData } = updates;
@@ -356,9 +357,9 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Pr
     const {...restOfLead } = lead;
     const passportExpiry = restOfLead.passportExpiry === '' ? null : restOfLead.passportExpiry;
     const leadHistoryEntry = {
-      action: 'Created',
+      action: "Created",
       timestamp: new Date().toISOString(),
-      details: { createdBy: lead.userID }
+      details: { createdBy: lead.userID },
     };
 
     return {
@@ -378,8 +379,13 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Pr
   return insertedLeads;
 };
 
-const getLeadDocumentsById = async (connection: Knex, leadID: string): Promise<any> => {
-  const leadDocument = await connection("document_checklists").where({ leadID }).first();
+const getLeadDocumentsById = async (
+  connection: Knex,
+  leadID: string,
+): Promise<any> => {
+  const leadDocument = await connection("document_checklists")
+    .where({ leadID })
+    .first();
   return leadDocument;
 };
 
@@ -387,8 +393,9 @@ const deleteDocuments = async (
   connection: Knex,
   leadId: string,
 ): Promise<number> => {
-
-  const deletedCount = await connection("document_checklists").where({ leadID: leadId }).delete();
+  const deletedCount = await connection("document_checklists")
+    .where({ leadID: leadId })
+    .delete();
 
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No documents found to delete");
@@ -396,14 +403,23 @@ const deleteDocuments = async (
   return deletedCount;
 };
 
-const updateLeadDocuments = async (connection: Knex, leadId: string, leadDocuments: any) => {
-  await connection('document_checklists')
+const updateLeadDocuments = async (
+  connection: Knex,
+  leadId: string,
+  leadDocuments: any,
+) => {
+  await connection("document_checklists")
     .where({ leadID: leadId })
     .update({ documents: JSON.stringify(leadDocuments.documents) });
 };
 
-
-const uploadLeadDocuments = async (connection: Knex, documents: Document[], leadID: string, tenantID: string, uploadType: string): Promise<void> => {
+const uploadLeadDocuments = async (
+  connection: Knex,
+  documents: Document[],
+  leadID: string,
+  tenantID: string,
+  uploadType: string,
+): Promise<void> => {
   const existingRecord = await connection("document_checklists")
     .where({ tenantID, leadID, uploadType })
     .first();
@@ -417,8 +433,11 @@ const uploadLeadDocuments = async (connection: Knex, documents: Document[], lead
       throw new Error("Failed to parse existing documents.");
     }
 
-    const newDocuments = documents.filter(newDoc =>
-      !existingDocuments.some(existingDoc => existingDoc.name === newDoc.name)
+    const newDocuments = documents.filter(
+      (newDoc) =>
+        !existingDocuments.some(
+          (existingDoc) => existingDoc.name === newDoc.name,
+        ),
     );
 
     const mergedDocuments = [...existingDocuments, ...newDocuments];
@@ -437,7 +456,7 @@ const uploadLeadDocuments = async (connection: Knex, documents: Document[], lead
       tenantID,
       leadID,
       documents: JSON.stringify(documents),
-      uploadType
+      uploadType,
     };
 
     try {
@@ -453,11 +472,17 @@ const getAllAssigne = async (connection: Knex): Promise<LeadAssignee[]> => {
   return await connection("lead_assignees").select("*");
 };
 
-const getAssigneById = async (connection: Knex, lead_id: string): Promise<LeadAssignee> => {
+const getAssigneById = async (
+  connection: Knex,
+  lead_id: string,
+): Promise<LeadAssignee> => {
   return await connection("lead_assignees").where({ lead_id }).first();
 };
 
-const assignLead = async (connection: Knex, leadAssignee: LeadAssignee): Promise<any> => {
+const assignLead = async (
+  connection: Knex,
+  leadAssignee: LeadAssignee,
+): Promise<any> => {
   const { lead_id, user_id } = leadAssignee;
 
   if (!lead_id || !Array.isArray(user_id)) {
@@ -475,13 +500,17 @@ const assignLead = async (connection: Knex, leadAssignee: LeadAssignee): Promise
       actionMessage = "Lead unassigned successfully";
     } else {
       const existingUserIds = new Set(getAssignees.user_id);
-      const userIdsToAdd = user_id.filter(id => !existingUserIds.has(id));
-      const userIdsToRemove = user_id.filter(id => existingUserIds.has(id));
+      const userIdsToAdd = user_id.filter((id) => !existingUserIds.has(id));
+      const userIdsToRemove = user_id.filter((id) => existingUserIds.has(id));
 
       if (userIdsToAdd.length > 0) {
-        finalUserIds = Array.from(new Set([...getAssignees.user_id, ...userIdsToAdd]));
+        finalUserIds = Array.from(
+          new Set([...getAssignees.user_id, ...userIdsToAdd]),
+        );
       } else {
-        finalUserIds = getAssignees.user_id.filter(id => !userIdsToRemove.includes(id));
+        finalUserIds = getAssignees.user_id.filter(
+          (id) => !userIdsToRemove.includes(id),
+        );
       }
 
       if (finalUserIds.length === 0) {
@@ -496,15 +525,14 @@ const assignLead = async (connection: Knex, leadAssignee: LeadAssignee): Promise
       }
     }
   } else {
-    await connection("lead_assignees")
-      .insert(leadAssignee)
-      .returning("*");
+    await connection("lead_assignees").insert(leadAssignee).returning("*");
     actionMessage = "Lead assigned successfully";
   }
 
-  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
+  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> =
+    [];
   if (lead.leadHistory) {
-    if (typeof lead.leadHistory === 'string') {
+    if (typeof lead.leadHistory === "string") {
       leadHistory = JSON.parse(lead.leadHistory);
     } else {
       leadHistory = lead.leadHistory;
@@ -514,7 +542,7 @@ const assignLead = async (connection: Knex, leadAssignee: LeadAssignee): Promise
   leadHistory.push({
     action: actionMessage,
     timestamp: new Date().toISOString(),
-    details: { assignedAgents: user_id }
+    details: { assignedAgents: user_id },
   });
 
   await connection("leads")
@@ -577,14 +605,16 @@ const getLeadHistory = async (
   return { fullLeadHistory };
 };
 
-const createLeadNote = async (connection: Knex, leadNote: LeadNote): Promise<LeadNote> => {
-
+const createLeadNote = async (
+  connection: Knex,
+  leadNote: LeadNote,
+): Promise<LeadNote> => {
   const correctedData = {
     ...leadNote,
     id: uuidv4(),
-  }
+  };
 
-  console.log("lead note data", correctedData)
+  console.log("lead note data", correctedData);
   const [insertedLeadNote] = await connection("lead_notes")
     .insert(correctedData)
     .returning("*");
@@ -600,15 +630,18 @@ const getLeadNotes = async (connection: Knex, leadId: string): Promise<any> => {
       const noteUser = await connection("users").where({ id: user_id }).first();
       return {
         ...rest,
-        user: noteUser
+        user: noteUser,
       };
-    })
+    }),
   );
 
   return updatedData;
 };
 
-const getLeadNoteById = async (connection: Knex, noteId: string): Promise<LeadNote[]> => {
+const getLeadNoteById = async (
+  connection: Knex,
+  noteId: string,
+): Promise<LeadNote[]> => {
   return await connection("lead_notes").where({ id: noteId }).first();
 };
 
@@ -634,8 +667,9 @@ const deleteLeadNoteById = async (
   connection: Knex,
   noteId: string,
 ): Promise<number> => {
-
-  const deletedCount = await connection("lead_notes").where({ id: noteId }).delete();
+  const deletedCount = await connection("lead_notes")
+    .where({ id: noteId })
+    .delete();
 
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No lead note found to delete");
@@ -643,12 +677,17 @@ const deleteLeadNoteById = async (
   return deletedCount;
 };
 
-const deleteAllLeadNotes = async (connection: Knex, leadId: string): Promise<number> => {
+const deleteAllLeadNotes = async (
+  connection: Knex,
+  leadId: string,
+): Promise<number> => {
   const leadNotes = await getLeadNotes(connection, leadId);
   if (leadNotes.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'No lead notes found to delete');
+    throw new ApiError(httpStatus.NOT_FOUND, "No lead notes found to delete");
   }
-  const deletedCount = await connection('lead_notes').where({ lead_id: leadId }).delete();
+  const deletedCount = await connection("lead_notes")
+    .where({ lead_id: leadId })
+    .delete();
 
   return deletedCount;
 };
