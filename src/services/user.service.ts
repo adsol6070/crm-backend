@@ -95,6 +95,7 @@ const createUser = async (
       tenantID: user.tenantID ?? tenantID,
       email: user.email,
     };
+    
     await connection("users").insert(insertedUser);
     await commonKnex("users").insert(commonUser);
     return insertedUser;

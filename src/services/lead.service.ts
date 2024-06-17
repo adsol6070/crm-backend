@@ -113,7 +113,7 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   // if (leadEmail) {
   //   throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   // }
-  const { userID, ...leadData } = lead;
+  const { ...leadData } = lead;
   const passportExpiry = leadData.passportExpiry === '' ? null : leadData.passportExpiry;
 
   const leadHistoryEntry = {
@@ -123,9 +123,9 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   };
 
   const correctedData = {
-
     ...leadData,
     id: uuidv4(),
+    visaCategory: String(leadData.visaCategory).toLowerCase(),
     passportExpiry: passportExpiry,
     leadHistory: JSON.stringify([leadHistoryEntry])
   }
@@ -138,7 +138,26 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
 };
 
 const getAllLeads = async (connection: Knex): Promise<Lead[]> => {
-  return await connection("leads").select("*");
+  return await connection("leads").select("*").orderBy("created_at", "asc");
+};
+
+const deleteAllLeads = async (connection: Knex) => {
+  const deletedCount = await connection("leads").select("*").delete();
+
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No leads found to delete");
+  }
+  return deletedCount;
+};
+
+const getSpecificLeads = async (connection: Knex, userId: string): Promise<Lead[]> => {
+  return await connection('leads')
+    .leftJoin('lead_assignees', 'leads.id', 'lead_assignees.lead_id')
+    .select('leads.*')
+    .whereRaw('lead_assignees.user_id @> ?', [`{"${userId}"}`])
+    .orWhereRaw(`"leadHistory" @> ?`, [JSON.stringify([{ details: { createdBy: userId } }])])
+    .orderBy('leads.created_at', 'asc')
+    .distinct('leads.id');
 };
 
 const getLeadById = async (connection: Knex, leadId: string): Promise<Lead> => {
@@ -193,6 +212,7 @@ const updateLeadById = async (
   const updatedDataWithoutID = {
     ...updatedData,
     passportExpiry: passportExpiry,
+    visaCategory: String(updatedData.visaCategory).toLowerCase(),
     leadHistory: JSON.stringify(leadHistory)
   };
 
@@ -217,6 +237,50 @@ const deleteLeadById = async (
     throw new ApiError(httpStatus.NOT_FOUND, "No lead found to delete");
   }
   return deletedCount;
+};
+
+const updateLeadStatus = async (
+  connection: Knex,
+  leadId: string,
+  updateBody: Partial<Lead>,
+) => {
+  const lead = await getLeadById(connection, leadId);
+  if (!lead) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Lead status not found");
+  }
+
+  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
+  if (lead.leadHistory) {
+    if (typeof lead.leadHistory === 'string') {
+      leadHistory = JSON.parse(lead.leadHistory);
+    }
+    else {
+      leadHistory = lead.leadHistory;
+    }
+  }
+
+  leadHistory.push({
+    action: 'Status Updated',
+    timestamp: new Date().toISOString(),
+    details: { statusUpdatedBy: updateBody.userID }
+  });
+
+  const {...updatedData } = updateBody;
+
+  const updatedDataWithoutID = {
+    ...updatedData,
+    leadHistory: JSON.stringify(leadHistory)
+  };
+
+  const updatedLead = await connection("leads")
+    .where({ id: leadId })
+    .update(updatedDataWithoutID)
+    .returning("*");
+
+  if (updatedLead.length === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Lead not found after update");
+  }
+  return updatedLead[0];
 };
 
 const createVisaCategory = async (
@@ -289,7 +353,8 @@ const deleteVisaCategory = async (
 
 const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Promise<Lead[]> => {
   const leadsWithIdsAndHistory = leads.map(lead => {
-    const { userID, ...restOfLead } = lead;
+    const {...restOfLead } = lead;
+    const passportExpiry = restOfLead.passportExpiry === '' ? null : restOfLead.passportExpiry;
     const leadHistoryEntry = {
       action: 'Created',
       timestamp: new Date().toISOString(),
@@ -300,6 +365,8 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Pr
       ...restOfLead,
       id: uuidv4(),
       tenantID: tenantId,
+      passportExpiry: passportExpiry,
+      visaCategory: String(restOfLead.visaCategory).toLowerCase(),
       leadHistory: JSON.stringify([leadHistoryEntry])
     };
   });
@@ -457,63 +524,55 @@ const assignLead = async (connection: Knex, leadAssignee: LeadAssignee): Promise
   return { message: actionMessage };
 };
 
-const getLeadHistory = async (connection: Knex, leadId: string)/* Promise<{ leadHistory: LeadHistoryEntry[] }> */ => {
-  const lead = await connection("leads").select("leadHistory").where({ id: leadId }).first();
+const getLeadHistory = async (
+  connection: Knex,
+  leadId: string,
+) => {
+  const lead = await connection("leads")
+    .select("leadHistory")
+    .where({ id: leadId })
+    .first();
+
   if (!lead) {
     throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
   }
 
-  let leadHistory: LeadHistoryEntry[] = lead.leadHistory || [];
+  const users: User[] = await connection("users").select(
+    "id",
+    "firstname",
+    "lastname",
+  );
 
+  const replaceUserIdsWithDocuments = (
+    historyArray: any[],
+    usersTable: any[],
+  ) => {
+    const userMap = usersTable.reduce((map, user) => {
+      map[user.id] = user;
+      return map;
+    }, {});
 
-  const userIds = leadHistory
-    .flatMap(entry => {
-      const idsHashMap = new Map<string, any>();
-      if (entry.details?.createdBy) idsHashMap.set("createdBy", entry.details?.createdBy);
-      if (entry.details?.updatedBy) idsHashMap.set("updatedBy", entry.details?.updatedBy);
-      if (entry.details?.assignedAgents) idsHashMap.set("assignedAgents", [...entry.details?.assignedAgents]);
-      return idsHashMap;
-    })
-    .filter(Boolean);
-  console.log(userIds)
-
-  const users: User[] = await connection("users")
-    .select("id", "firstname", "lastname");
-
-  console.log("Users:", users);
-
-  const userLookup = users.reduce((acc: any, user: any) => {
-    acc[user.id] = user;
-    return acc;
-  }, {});
-
-  console.log("UserLookup:", userLookup);
-
-  const replaceIdsWithUsers = (hashMap: any) => {
-    const newHashMap = new Map();
-    for (const [key, value] of hashMap) {
-      if (Array.isArray(value)) {
-        newHashMap.set(key, value.map(id => userLookup[id] || id))
-      } else {
-        newHashMap.set(key, userLookup[value] || value)
+    const modifiedHistoryArray = historyArray?.map((entry) => {
+      if (entry.details.createdBy) {
+        entry.details.createdBy = userMap[entry.details.createdBy];
       }
-    }
-    return newHashMap
-  }
+      if (entry.details.updatedBy) {
+        entry.details.updatedBy = userMap[entry.details.updatedBy];
+      }
+      if (entry.details.assignedAgents) {
+        entry.details.assignedAgents = entry.details.assignedAgents.map((agentId: string) => userMap[agentId]);
+      }
+      if (entry.details.statusUpdatedBy) {
+        entry.details.statusUpdatedBy = userMap[entry.details.statusUpdatedBy];
+      }
 
-  const updatedHashMap = userIds.map((userId) => {
-    return replaceIdsWithUsers(userId)
-  })
+      return entry;
+    });
 
-  const fullLeadHistory = updatedHashMap.map(map => {
-    const obj: any = {};
-    for (const [key, value] of map) {
-      obj[key] = value;
-    }
-    return obj;
-  });
+    return modifiedHistoryArray;
+  };
 
-  console.log("UpdatedHashMap:", fullLeadHistory);
+  const fullLeadHistory = replaceUserIdsWithDocuments(lead.leadHistory, users);
 
   return { fullLeadHistory };
 };
@@ -533,8 +592,8 @@ const createLeadNote = async (connection: Knex, leadNote: LeadNote): Promise<Lea
 };
 
 const getLeadNotes = async (connection: Knex, leadId: string): Promise<any> => {
- 
-  const leadNotes = await connection("lead_notes").where({ lead_id: leadId }).select("*");
+
+  const leadNotes = await connection("lead_notes").where({ lead_id: leadId }).select("*").orderBy("created_at", "desc");
 
   const updatedData = await Promise.all(
     leadNotes.map(async ({ user_id, ...rest }) => {
@@ -597,9 +656,12 @@ const deleteAllLeadNotes = async (connection: Knex, leadId: string): Promise<num
 export default {
   createLead,
   getAllLeads,
+  deleteAllLeads,
   getLeadById,
   updateLeadById,
   deleteLeadById,
+  getSpecificLeads,
+  updateLeadStatus,
   createVisaCategory,
   getAllVisaCategory,
   getVisaCategoryById,

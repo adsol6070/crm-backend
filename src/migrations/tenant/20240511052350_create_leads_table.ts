@@ -36,14 +36,11 @@ export async function up(knex: Knex): Promise<void> {
       table.string("scholarships");
       table.string("communicationMode");
       table.string("preferredContactTime");
-      table.text("notes");
       table.string("leadSource");
       table.string("referralContact");
       table.string("leadStatus");
-      table.string("assignedAgent");
       table.date("followUpDates");
       table.string("leadRating");
-      table.text("leadNotes");
       table.jsonb("leadHistory");
       table.timestamps(true, true);
     });

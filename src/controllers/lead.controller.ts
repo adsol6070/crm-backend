@@ -76,6 +76,20 @@ const getAllLeads = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).send(leads);
 });
 
+const getSpecificLeads = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const userId = req.params.userId;
+  const leads = await leadService.getSpecificLeads(connection, userId);
+  console.log(leads)
+  res.status(httpStatus.OK).send(leads);
+});
+
+const deleteAllLeads = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  await leadService.deleteAllLeads(connection);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
 const getLeadById = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const leadId = req.params.leadId;
@@ -126,6 +140,13 @@ const deleteLeadById = catchAsync(async (req: Request, res: Response) => {
   } else {
     res.status(httpStatus.NOT_FOUND).send({ message: "Lead not found" });
   }
+});
+
+const updateLeadStatus = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadId = req.params.leadId;
+  const leadStatus = await leadService.updateLeadStatus(connection, leadId, req.body);
+  res.status(httpStatus.OK).send(leadStatus);
 });
 
 const createVisaCategory = catchAsync(async (req: Request, res: Response) => {
@@ -467,9 +488,12 @@ const deleteAllNotes = catchAsync(async (req: Request, res: Response) => {
 export default {
   createLead,
   getAllLeads,
+  deleteAllLeads,
   getLeadById,
   updateLeadById,
   deleteLeadById,
+  getSpecificLeads,
+  updateLeadStatus,
   createVisaCategory,
   getVisaCategory,
   getVisaCategoryById,
