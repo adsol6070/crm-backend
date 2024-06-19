@@ -41,7 +41,6 @@ export async function up(knex: Knex): Promise<void> {
       table.string("leadStatus");
       table.date("followUpDates");
       table.string("leadRating");
-      table.jsonb("leadHistory");
       table.timestamps(true, true);
     });
     

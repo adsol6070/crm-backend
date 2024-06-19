@@ -19,6 +19,8 @@ interface User {
   email: string;
   password: string;
   phone: string;
+  city: string;
+  address: string;
   uploadType?: string;
   profileImage?: string;
   isEmailVerified?: boolean;
@@ -51,6 +53,8 @@ const getUserProfile = async (
       "lastname",
       "email",
       "phone",
+      "city",
+      "address",
       "profileImage",
       "isEmailVerified",
       "role",
@@ -86,6 +90,8 @@ const createUser = async (
       email: user.email,
       password: hashedPassword,
       phone: user.phone,
+      city: user.city,
+      address: user.address,
       profileImage: file ? file.filename : null,
       isEmailVerified: user.isEmailVerified ?? false,
       role: user.role ?? "user",
@@ -139,6 +145,8 @@ const getAllUsers = async (connection: Knex): Promise<SafeUser[]> => {
     "lastname",
     "email",
     "phone",
+    "city",
+    "address",
     "profileImage",
     "isEmailVerified",
     "role",

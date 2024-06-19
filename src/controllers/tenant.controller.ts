@@ -113,7 +113,7 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
 
   res
     .status(httpStatus.CREATED)
-    .json({ message: "Tenant created successfully", dbConnection });
+    .json({ message: "Tenant created successfully", dbConnection, tenantID });
 });
 
 // const deleteTenant = catchAsync(async (req: Request, res: Response) => {

@@ -221,7 +221,7 @@ const uploadLead = catchAsync(async (req: Request, res: Response) => {
   if (!Array.isArray(parsedData) || parsedData.length === 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'No valid data to import');
   }
-  const uploadLeads = await leadService.uploadLead(connection, parsedData, req.body.tenantID);
+  const uploadLeads = await leadService.uploadLead(connection, parsedData, req.body.tenantID, req.body.userID);
   const message = "Leads uploaded successfully.";
   res.status(httpStatus.CREATED).json({ uploadLeads, message });
 });

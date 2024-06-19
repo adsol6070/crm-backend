@@ -208,7 +208,7 @@ const updateLeadById = async (
     details: { updatedBy: updates.userID },
   });
 
-  const { userID, ...updatedData } = updates;
+  const { ...updatedData } = updates;
 
   const updatedDataWithoutID = {
     ...updatedData,
@@ -352,14 +352,14 @@ const deleteVisaCategory = async (
   return deletedCount;
 };
 
-const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Promise<Lead[]> => {
+const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string, userID: string): Promise<Lead[]> => {
   const leadsWithIdsAndHistory = leads.map(lead => {
     const {...restOfLead } = lead;
     const passportExpiry = restOfLead.passportExpiry === '' ? null : restOfLead.passportExpiry;
     const leadHistoryEntry = {
       action: "Created",
       timestamp: new Date().toISOString(),
-      details: { createdBy: lead.userID },
+      details: { createdBy: userID },
     };
 
     return {
@@ -367,6 +367,7 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string): Pr
       id: uuidv4(),
       tenantID: tenantId,
       passportExpiry: passportExpiry,
+      userID: userID,
       visaCategory: String(restOfLead.visaCategory).toLowerCase(),
       leadHistory: JSON.stringify([leadHistoryEntry])
     };
