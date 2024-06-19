@@ -4,7 +4,7 @@ import { leadController } from "../controllers";
 import { connectionRequest } from "../middlewares/connectionResolver";
 import upload from "../middlewares/multer";
 import { parseFile } from "../middlewares/csvParser";
-import { Permission } from "../config/permissions";
+import { LeadPermissions, Permission } from "../config/permissions";
 
 const router = express.Router();
 
@@ -18,20 +18,48 @@ router
   .route("/visaCategory/:visaCategoryId")
   .get(auth("Visas"), connectionRequest, leadController.getVisaCategoryById)
   .patch(auth("Visas"), connectionRequest, leadController.updateVisaCategory)
-  .delete(auth("Visas"), connectionRequest, leadController.deleteVisaCategoryById);
+  .delete(
+    auth("Visas"),
+    connectionRequest,
+    leadController.deleteVisaCategoryById,
+  );
 
 // Lead Routes
 router
   .route("/")
-  .get(auth("getLeads"), connectionRequest, leadController.getAllLeads)
-  .post(auth("manageLeads"), connectionRequest, leadController.createLead)
-  .delete(auth("manageLeads"), connectionRequest, leadController.deleteAllLeads);
+  .get(
+    auth("Leads", LeadPermissions.VIEW),
+    connectionRequest,
+    leadController.getAllLeads,
+  )
+  .post(
+    auth("Leads", LeadPermissions.CREATE),
+    connectionRequest,
+    leadController.createLead,
+  )
+  .delete(
+    auth("Leads", LeadPermissions.DELETEALL),
+    connectionRequest,
+    leadController.deleteAllLeads,
+  );
 
 router
   .route("/:leadId")
-  .get(auth("getLeads"), connectionRequest, leadController.getLeadById)
-  .patch(auth("manageLeads"), connectionRequest, leadController.updateLeadById)
-  .delete(auth("manageLeads"), connectionRequest, leadController.deleteLeadById);
+  .get(
+    auth("Leads", LeadPermissions.VIEW),
+    connectionRequest,
+    leadController.getLeadById,
+  )
+  .patch(
+    auth("Leads", LeadPermissions.EDIT),
+    connectionRequest,
+    leadController.updateLeadById,
+  )
+  .delete(
+    auth("Leads", LeadPermissions.DELETE),
+    connectionRequest,
+    leadController.deleteLeadById,
+  );
 
 router
   .route("/getSpecificLeads/:userId")
@@ -39,67 +67,111 @@ router
 
 router
   .route("/leadAssignee")
-  .get(auth("getLeadAssignes"), connectionRequest, leadController.getAllAssignes)
-  .post(auth("manageAssignes"), connectionRequest, leadController.assignLead);
+  .get(
+    auth("getLeadAssignes"),
+    connectionRequest,
+    leadController.getAllAssignes,
+  )
+  .post(
+    auth("Leads", LeadPermissions.ASSIGN),
+    connectionRequest,
+    leadController.assignLead,
+  );
 
 router
   .route("/leadAssignee/:leadId")
-  .get(auth("getLeadAssignes"), connectionRequest, leadController.getLeadAssigneeById);
+  .get(
+    auth("getLeadAssignes"),
+    connectionRequest,
+    leadController.getLeadAssigneeById,
+  );
 
 router
   .route("/leadHistory/:leadId")
-  .get(auth("manageLeads"), connectionRequest, leadController.getLeadHistory);
+  .get(
+    auth("Leads", LeadPermissions.HISTORY),
+    connectionRequest,
+    leadController.getLeadHistory,
+  );
 
 router
   .route("/importLeads")
   .post(
-    auth("manageLeads"),
+    auth("Leads", LeadPermissions.IMPORTBULK),
     upload.single("leadFile"),
     parseFile,
     connectionRequest,
-    leadController.uploadLead
+    leadController.uploadLead,
   );
 
 router
   .route("/documentChecklist/:leadId")
-  .get(auth("manageLeads"), connectionRequest, leadController.getLeadDocumentsZip)
+  .get(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.getLeadDocumentsZip,
+  )
   .post(
     auth("manageLeads"),
     upload.array("documents", 10),
     connectionRequest,
-    leadController.uploadLeadChecklists
+    leadController.uploadLeadChecklists,
   );
 
 router
   .route("/getDocument/:leadId")
   .get(auth("manageLeads"), connectionRequest, leadController.getDocuments)
-  .delete(auth("manageLeads"), connectionRequest, leadController.deleteDocuments);
+  .delete(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.deleteDocuments,
+  );
 
 router
   .route("/getSingleDocument/:leadId/:filename")
-  .get(auth("manageLeads"), connectionRequest, leadController.getSingleDocuments)
+  .get(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.getSingleDocuments,
+  )
   .patch(
     auth("manageLeads"),
-    upload.single('documents'),
+    upload.single("documents"),
     connectionRequest,
-    leadController.updateSingleDocuments
+    leadController.updateSingleDocuments,
   )
-  .delete(auth("manageLeads"), connectionRequest, leadController.deleteSingleDocument);
+  .delete(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.deleteSingleDocument,
+  );
 
 router
   .route("/leadStatus/:leadId")
-  .patch(auth("getLeads"), connectionRequest, leadController.updateLeadStatus);
+  .patch(auth(), connectionRequest, leadController.updateLeadStatus);
 
 router
   .route("/leadNotes/:leadId")
   .get(auth("getLeads"), connectionRequest, leadController.getNotes)
-  .post(auth("manageLeads"), connectionRequest, leadController.createLeadNote)
+  .post(
+    auth("Leads", LeadPermissions.ADDNOTES),
+    connectionRequest,
+    leadController.createLeadNote,
+  )
   .patch(auth("manageLeads"), connectionRequest, leadController.updateLeadNote)
-  .delete(auth("manageLeads"), connectionRequest, leadController.deleteAllNotes);
+  .delete(
+    auth("Leads", LeadPermissions.DELETENOTES),
+    connectionRequest,
+    leadController.deleteAllNotes,
+  );
 
 router
   .route("/leadNote/:noteId")
   .patch(auth("manageLeads"), connectionRequest, leadController.updateLeadNote)
-  .delete(auth("manageLeads"), connectionRequest, leadController.deleteLeadNoteById);
+  .delete(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.deleteLeadNoteById,
+  );
 
 export default router;
