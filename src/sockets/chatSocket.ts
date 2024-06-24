@@ -48,10 +48,10 @@ export const setupChatSocket = (
             description: status
               ? "Online"
               : "Last seen at " +
-                new Date(user.last_active).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
+              new Date(user.last_active).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
           });
         }
       } catch (error) {
@@ -145,6 +145,29 @@ export const setupChatSocket = (
         handleError(error, "Error during authentication");
       }
     });
+
+    socket.on("requestInitialNotifications", async () => {
+      try {
+        if (socket.data.user && socket.data.connection) {
+          const leadNotications = await socket.data.connection('lead_notifications').where({ user_id: socket.data.user.id }).select("*").orderBy("created_at", "desc");
+
+          socket.emit("initialNotifications", leadNotications)
+        }
+      } catch (error) {
+        console.error("Error requesting initial notifications:", error);
+      }
+    })
+
+    socket.on("clearAllNotifications", async () => {
+      try {
+        if (socket.data.connection && socket.data.user) {
+          await socket.data.connection("lead_notifications").where({ user_id: socket.data.user.id }).del();
+          socket.emit("notificationsCleared");
+        }
+      } catch (error) {
+        console.error("Error clearing notifications:", error);
+      }
+    })
 
     socket.on("requestInitialUsers", async () => {
       try {
@@ -1040,6 +1063,8 @@ export const setupChatSocket = (
       }
     });
   });
+
+  return io
 };
 
 function handleError(error: unknown, context: string) {

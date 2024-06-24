@@ -7,6 +7,7 @@ import { setupChatSocket } from "./sockets/chatSocket";
 
 // Define server and custom socket interface
 let server: any;
+let io: any
 
 const startServer = async () => {
   try {
@@ -15,7 +16,7 @@ const startServer = async () => {
 
     const httpServer = createServer(app);
 
-    setupChatSocket(httpServer);
+    io = setupChatSocket(httpServer);
 
     server = httpServer.listen(config.port, () => {
       logger.info(`Server is listening at http://localhost:${config.port}`);
@@ -60,3 +61,5 @@ process.on("SIGINT", () => {
 });
 
 startServer();
+
+export { io }

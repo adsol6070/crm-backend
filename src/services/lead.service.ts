@@ -3,6 +3,7 @@ import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { v4 as uuidv4 } from "uuid";
 import commonService from "./common.service";
+import { io } from "..";
 
 interface Lead {
   id: string;
@@ -266,7 +267,7 @@ const updateLeadStatus = async (
     details: { statusUpdatedBy: updateBody.userID }
   });
 
-  const {...updatedData } = updateBody;
+  const { ...updatedData } = updateBody;
 
   const updatedDataWithoutID = {
     ...updatedData,
@@ -354,7 +355,7 @@ const deleteVisaCategory = async (
 
 const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string, userID: string): Promise<Lead[]> => {
   const leadsWithIdsAndHistory = leads.map(lead => {
-    const {...restOfLead } = lead;
+    const { ...restOfLead } = lead;
     const passportExpiry = restOfLead.passportExpiry === '' ? null : restOfLead.passportExpiry;
     const leadHistoryEntry = {
       action: "Created",
@@ -495,22 +496,39 @@ const assignLead = async (
 
   let finalUserIds;
   let actionMessage;
+  let notificationMessages = [];
+
   if (getAssignees) {
     if (user_id.length === 0) {
       await connection("lead_assignees").where({ lead_id }).delete();
       actionMessage = "Lead unassigned successfully";
+      notificationMessages = getAssignees.user_id.map(id => ({
+        user_id: id,
+        message: `You have been unassigned to Lead ID: ${lead_id}`,
+      }));
     } else {
       const existingUserIds = new Set(getAssignees.user_id);
       const userIdsToAdd = user_id.filter((id) => !existingUserIds.has(id));
-      const userIdsToRemove = user_id.filter((id) => existingUserIds.has(id));
+      const userIdsToRemove = getAssignees.user_id.filter((id) => !user_id.includes(id));
 
       if (userIdsToAdd.length > 0) {
-        finalUserIds = Array.from(
-          new Set([...getAssignees.user_id, ...userIdsToAdd]),
+        finalUserIds = Array.from(new Set([...getAssignees.user_id, ...userIdsToAdd]));
+        notificationMessages.push(
+          ...userIdsToAdd.map(id => ({
+            user_id: id,
+            message: `You have been assigned to Lead ID: ${lead_id}`
+          }))
         );
       } else {
-        finalUserIds = getAssignees.user_id.filter(
-          (id) => !userIdsToRemove.includes(id),
+        finalUserIds = getAssignees.user_id.filter(id => !userIdsToRemove.includes(id));
+      }
+
+      if (userIdsToRemove.length > 0) {
+        notificationMessages.push(
+          ...userIdsToRemove.map(id => ({
+            user_id: id,
+            message: `You have been unassigned to Lead ID: ${lead_id}`
+          }))
         );
       }
 
@@ -528,10 +546,13 @@ const assignLead = async (
   } else {
     await connection("lead_assignees").insert(leadAssignee).returning("*");
     actionMessage = "Lead assigned successfully";
+    notificationMessages = user_id.map(id => ({
+      user_id: id,
+      message: `You have been assigned to Lead ID: ${lead_id}`,
+    }));
   }
 
-  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> =
-    [];
+  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
   if (lead.leadHistory) {
     if (typeof lead.leadHistory === "string") {
       leadHistory = JSON.parse(lead.leadHistory);
@@ -549,6 +570,27 @@ const assignLead = async (
   await connection("leads")
     .where({ id: lead_id })
     .update({ leadHistory: JSON.stringify(leadHistory) });
+
+  const notifications = notificationMessages.map(({ user_id, message }) => ({
+    id: uuidv4(),
+    user_id,
+    lead_id,
+    message,
+    icon: 'ri-user-add-line',
+    variant: 'info',
+  }));
+
+  await connection("lead_notifications").insert(notifications);
+
+  notificationMessages.forEach(({ user_id, message }) => {
+    io.to(`${user_id}`).emit('notification', {
+      id: uuidv4(),
+      message,
+      icon: 'ri-user-add-line',
+      variant: 'info',
+      created_at: new Date(),
+    });
+  });
 
   return { message: actionMessage };
 };
