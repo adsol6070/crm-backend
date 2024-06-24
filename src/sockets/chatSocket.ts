@@ -115,6 +115,20 @@ export const setupChatSocket = (
       }
     };
 
+    const sendNotification = async (userId: string, notification: any) => {
+      await socket.data.connection("message_notifications").insert({
+        id: notification.id,
+        user_id: userId,
+        name: notification.name,
+        subText: notification.subText,
+        avatar: notification.avatar,
+        createdAt: notification.createdAt,
+        read: false,
+      });
+
+      io.to(userId.toString()).emit("messageNotification", notification);
+    };
+
     const handleDisconnect = () => {
       if (socket.data.user && socket.data.connection) {
         const userId = socket.data.user.id;
@@ -164,6 +178,36 @@ export const setupChatSocket = (
         }
       } catch (error) {
         handleError(error, "Error requesting initial users");
+      }
+    });
+
+    socket.on("requestInitialMessageNotifications", async () => {
+      try {
+        if (socket.data.user && socket.data.connection) {
+          const notifications = await socket.data
+            .connection("message_notifications")
+            .where({ user_id: socket.data.user.id })
+            .orderBy("createdAt", "desc");
+
+          socket.emit("initialMessageNotifications", notifications);
+        }
+      } catch (error) {
+        handleError(error, "Error requesting initial message notifications");
+      }
+    });
+
+    socket.on("clearAllMessageNotifications", async () => {
+      try {
+        if (socket.data.connection && socket.data.user) {
+          await socket.data
+            .connection("message_notifications")
+            .where({ user_id: socket.data.user.id })
+            .del();
+
+          socket.emit("notificationsCleared");
+        }
+      } catch (error) {
+        handleError(error, "Error clearing all notifications");
       }
     });
 
@@ -223,6 +267,16 @@ export const setupChatSocket = (
           };
 
           await socket.data.connection("messages").insert(newMessage);
+
+          const notification = {
+            id: uuidv4(),
+            name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
+            subText: "This is the message",
+            avatar: "",
+            createdAt: new Date(),
+          };
+
+          await sendNotification(toUserId, notification);
 
           if (toUserId === socket.data.user.id) {
             io.to(toUserId.toString()).emit("receiveMessage", newMessage);
@@ -302,6 +356,16 @@ export const setupChatSocket = (
             await socket.data.connection("messages").insert(newMessages);
 
             toUserIds.forEach((toUserId: string) => {
+              const notification = {
+                id: uuidv4(),
+                name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
+                subText: "This is the message",
+                avatar: "",
+                createdAt: new Date(),
+              };
+
+              sendNotification(toUserId, notification);
+
               socket.to(toUserId.toString()).emit("receiveMessage", {
                 ...newMessages.find((msg: any) => msg.toUserId === toUserId),
               });
@@ -363,6 +427,16 @@ export const setupChatSocket = (
                 image,
                 members: groupMembers,
               });
+
+              const notification = {
+                id: uuidv4(),
+                name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
+                subText: "This is the message",
+                avatar: "",
+                createdAt: new Date(),
+              };
+
+              sendNotification(userId, notification);
             });
           }
         } catch (error) {
@@ -409,6 +483,16 @@ export const setupChatSocket = (
               "receiveGroupMessage",
               messageWithUser,
             );
+
+            const notification = {
+              id: uuidv4(),
+              name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
+              subText: "This is the message",
+              avatar: "",
+              createdAt: new Date(),
+            };
+
+            sendNotification(user_id, notification);
           });
         }
       } catch (error) {
@@ -435,16 +519,7 @@ export const setupChatSocket = (
               "group_messages.id",
               "user_group_messages.group_message_id",
             )
-            // .where("group_messages.group_id", groupId)
-            // .andWhere((builder: Knex.QueryBuilder) =>
-            //   builder
-            //     .whereNull("user_group_messages.user_id")
-            //     .orWhere(
-            //       "user_group_messages.user_id",
-            //       "!=",
-            //       socket.data.user.id,
-            //     ),
-            // )
+            .where("group_messages.group_id", groupId)
             .orderBy("group_messages.timestamp", "asc");
 
           if (userGroup.disable_date) {
@@ -471,6 +546,7 @@ export const setupChatSocket = (
           const userIds = filteredGroupChatHistory.map(
             (msg: any) => msg.from_user_id,
           );
+
           const uniqueUserIds = [...new Set(userIds)];
           const users = await socket.data
             .connection("users")
@@ -510,6 +586,7 @@ export const setupChatSocket = (
           );
 
           socket.emit("groupChatHistory", {
+            groupId,
             chatHistory: modifiedGroupChatHistory,
             members: memberDetails,
           });
@@ -525,7 +602,7 @@ export const setupChatSocket = (
           const userGroups = await socket.data
             .connection("group_users")
             .where({ user_id: socket.data.user.id })
-            .select("group_id");
+            .select("group_id", "is_active", "removed_by_admin");
 
           const groupIds = userGroups.map((group: any) => group.group_id);
 
@@ -539,11 +616,9 @@ export const setupChatSocket = (
             .whereIn("group_id", groupIds)
             .select("group_id", "user_id");
 
-          const disabledGroups = await socket.data
-            .connection("group_users")
-            .where({ user_id: socket.data.user.id, is_active: false })
-            .select("group_id");
-
+          const disabledGroups = userGroups.filter(
+            (group: any) => !group.is_active,
+          );
           const disabledGroupIds = disabledGroups.map(
             (group: any) => group.group_id,
           );
@@ -579,7 +654,10 @@ export const setupChatSocket = (
 
           socket.emit("initialGroups", {
             groups: userGroupsWithUsers,
-            disabledGroups: disabledGroupIds,
+            disabledGroups: disabledGroups.map((group: any) => ({
+              groupId: group.group_id,
+              removedByAdmin: group.removed_by_admin,
+            })),
           });
         }
       } catch (error) {
@@ -640,15 +718,31 @@ export const setupChatSocket = (
             image: group.image,
           };
 
+          const notificationMessage = {
+            id: uuidv4(),
+            group_id: groupId,
+            from_user_id: null,
+            message: `${user.firstname} ${user.lastname} has rejoined the group.`,
+            system: true,
+          };
+
+          await socket.data
+            .connection("group_messages")
+            .insert(notificationMessage);
+
           groupUsers.forEach(({ user_id }: any) => {
             io.to(user_id.toString()).emit("userAddedToGroup", {
               groupId,
               userId,
               user,
             });
+            io.to(user_id.toString()).emit(
+              "userRejoinedNotification",
+              notificationMessage,
+            );
           });
 
-          io.to(userId.toString()).emit("groupCreated", groupDetails);
+          io.to(userId.toString()).emit("groupReenabled", groupDetails);
         }
       } catch (error) {
         handleError(error, "Error adding user to group");
@@ -672,16 +766,46 @@ export const setupChatSocket = (
             await socket.data
               .connection("group_users")
               .where({ group_id: groupId, user_id: userId })
-              .update({ is_active: false, disable_date: new Date() });
+              .update({
+                is_active: false,
+                disable_date: new Date(),
+                removed_by_admin: true,
+              });
+
+            const user = await socket.data
+              .connection("users")
+              .where({ id: userId })
+              .select("firstname", "lastname")
+              .first();
+
+            const notificationMessage = {
+              id: uuidv4(),
+              group_id: groupId,
+              from_user_id: null,
+              message: `${user.firstname} ${user.lastname} was removed by admin.`,
+              system: true,
+            };
+
+            await socket.data
+              .connection("group_messages")
+              .insert(notificationMessage);
 
             groupUsers.forEach(({ user_id }: any) => {
               io.to(user_id.toString()).emit("userRemovedFromGroup", {
                 groupId,
                 userId,
+                removedByAdmin: true,
               });
+              io.to(user_id.toString()).emit(
+                "userRemovedNotification",
+                notificationMessage,
+              );
             });
 
-            io.to(userId.toString()).emit("groupDisabled", { groupId });
+            io.to(userId.toString()).emit("groupDisabled", {
+              groupId,
+              removedByAdmin: true,
+            });
           }
         }
       } catch (error) {
@@ -782,6 +906,7 @@ export const setupChatSocket = (
     socket.on("transferGroupOwnership", async ({ groupId, newOwnerId }) => {
       try {
         if (socket.data.user && socket.data.connection) {
+          const userId = socket.data.user.id;
           const group = await socket.data
             .connection("groups")
             .where({ id: groupId })
@@ -809,7 +934,7 @@ export const setupChatSocket = (
             await socket.data
               .connection("group_users")
               .where({ group_id: groupId, user_id: socket.data.user.id })
-              .del();
+              .update({ is_active: false, disable_date: new Date() });
 
             groupUsers.forEach(({ user_id }: any) => {
               io.to(user_id.toString()).emit("userLeftGroup", {
@@ -817,6 +942,8 @@ export const setupChatSocket = (
                 userId: socket.data.user.id,
               });
             });
+
+            io.to(userId.toString()).emit("groupDisabled", { groupId });
           }
         }
       } catch (error) {
@@ -950,16 +1077,46 @@ export const setupChatSocket = (
               await socket.data
                 .connection("group_users")
                 .where({ group_id: groupId, user_id: userId })
-                .update({ is_active: false, disable_date: new Date() });
+                .update({
+                  is_active: false,
+                  disable_date: new Date(),
+                  removed_by_admin: false,
+                });
+
+              const user = await socket.data
+                .connection("users")
+                .where({ id: userId })
+                .select("firstname", "lastname")
+                .first();
+
+              const notificationMessage = {
+                id: uuidv4(),
+                group_id: groupId,
+                from_user_id: null,
+                message: `${user.firstname} ${user.lastname} left the group.`,
+                system: true,
+              };
+
+              await socket.data
+                .connection("group_messages")
+                .insert(notificationMessage);
 
               groupUsers.forEach(({ user_id }: any) => {
                 io.to(user_id.toString()).emit("userRemovedFromGroup", {
                   groupId,
                   userId,
+                  removedByAdmin: false,
                 });
+                io.to(user_id.toString()).emit(
+                  "userRemovedNotification",
+                  notificationMessage,
+                );
               });
 
-              io.to(userId.toString()).emit("groupDisabled", { groupId });
+              io.to(userId.toString()).emit("groupDisabled", {
+                groupId,
+                removedByAdmin: false,
+              });
             }
           }
         }
