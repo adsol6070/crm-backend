@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema.table(
       "group_messages",
       function (table: Knex.AlterTableBuilder) {
-        table.boolean("read").defaultTo(false);
+        table.boolean("system").defaultTo(false);
       },
     );
   } catch (error) {
@@ -18,7 +18,7 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.table(
       "group_messages",
       function (table: Knex.AlterTableBuilder) {
-        table.dropColumn("read");
+        table.dropColumn("system");
       },
     );
   } catch (error) {
