@@ -54,7 +54,7 @@ const upload = multer({
       const filetypes =
         req.body.uploadType === "Blog"
           ? /jpeg|jpg|png|gif/
-          : /jpeg|jpg|png|gif|csv|xls|xlsx|pdf/;
+          : /jpeg|jpg|png|gif|csv|xls|xlsx|pdf|zip/;
       const extname = filetypes.test(
         path.extname(file.originalname).toLowerCase(),
       );

@@ -2,8 +2,8 @@ import express from "express";
 import { auth } from "../middlewares/auth";
 import { connectionRequest } from "../middlewares/connectionResolver";
 import { blogController } from "../controllers";
-import upload from "../middlewares/multer";
 import { Permission } from "../config/permissions";
+import upload from "../middlewares/multer";
 
 const router = express.Router();
 

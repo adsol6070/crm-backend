@@ -20,7 +20,41 @@ const getGroupImage = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).sendFile(image);
 });
 
+const uploadChatFile = catchAsync(async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res
+      .status(httpStatus.BAD_REQUEST)
+      .json({ error: "No file uploaded." });
+  }
+
+  console.log("Req.file:", req.file);
+
+  const fileUrl = req.file.filename;
+  const fileName = req.file.originalname;
+  const fileType = req.file.mimetype;
+  const fileSize = req.file.size;
+  res.status(httpStatus.OK).json({ fileUrl, fileName, fileType, fileSize });
+});
+
+const getChatFile = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const { messageId, tenantID, isGroupMessage } = req.body;
+  let file;
+  if (isGroupMessage) {
+    file = await chatService.getGroupChatFileById(
+      connection,
+      messageId,
+      tenantID,
+    );
+  } else {
+    file = await chatService.getChatFileById(connection, messageId, tenantID);
+  }
+  res.status(httpStatus.OK).sendFile(file);
+});
+
 export default {
   uploadGroupImage,
   getGroupImage,
+  uploadChatFile,
+  getChatFile,
 };

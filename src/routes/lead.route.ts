@@ -2,9 +2,9 @@ import express from "express";
 import { auth } from "../middlewares/auth";
 import { leadController } from "../controllers";
 import { connectionRequest } from "../middlewares/connectionResolver";
-import upload from "../middlewares/multer";
 import { parseFile } from "../middlewares/csvParser";
 import { LeadPermissions, Permission } from "../config/permissions";
+import upload from "../middlewares/multer";
 
 const router = express.Router();
 
