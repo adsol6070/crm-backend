@@ -20,6 +20,11 @@ interface Lead {
   passportNumber?: string;
   passportExpiry?: string;
   currentAddress?: string;
+  country?: string,
+  state?: string,
+  district?: string,
+  city?: string,
+  pincode?: string,
   permanentAddress?: string;
   highestQualification?: string;
   fieldOfStudy?: string;
@@ -109,6 +114,12 @@ interface User {
   lastname: string;
 }
 
+const capitalizeFirstLetterOfEachWord = (str: string | undefined) => {
+  return str?.replace(/\b\w/g, function (char) {
+    return char.toUpperCase();
+  });
+}
+
 const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   // const leadEmail = await commonService.isEmailTaken(connection, "leads", lead.email)
   // if (leadEmail) {
@@ -131,7 +142,6 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
     leadHistory: JSON.stringify([leadHistoryEntry]),
   };
 
-  console.log(correctedData);
   const [insertedLead] = await connection("leads")
     .insert(correctedData)
     .returning("*");
@@ -241,6 +251,50 @@ const deleteLeadById = async (
   return deletedCount;
 };
 
+// const updateLeadStatus = async (
+//   connection: Knex,
+//   leadId: string,
+//   updateBody: Partial<Lead>,
+// ) => {
+//   const lead = await getLeadById(connection, leadId);
+//   if (!lead) {
+//     throw new ApiError(httpStatus.NOT_FOUND, "Lead status not found");
+//   }
+
+//   let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
+//   if (lead.leadHistory) {
+//     if (typeof lead.leadHistory === 'string') {
+//       leadHistory = JSON.parse(lead.leadHistory);
+//     }
+//     else {
+//       leadHistory = lead.leadHistory;
+//     }
+//   }
+
+//   leadHistory.push({
+//     action: 'Status Updated',
+//     timestamp: new Date().toISOString(),
+//     details: { statusUpdatedBy: updateBody.userID }
+//   });
+
+//   const { ...updatedData } = updateBody;
+
+//   const updatedDataWithoutID = {
+//     ...updatedData,
+//     leadHistory: JSON.stringify(leadHistory)
+//   };
+
+//   const updatedLead = await connection("leads")
+//     .where({ id: leadId })
+//     .update(updatedDataWithoutID)
+//     .returning("*");
+
+//   if (updatedLead.length === 0) {
+//     throw new ApiError(httpStatus.NOT_FOUND, "Lead not found after update");
+//   }
+//   return updatedLead[0];
+// };
+
 const updateLeadStatus = async (
   connection: Knex,
   leadId: string,
@@ -248,32 +302,41 @@ const updateLeadStatus = async (
 ) => {
   const lead = await getLeadById(connection, leadId);
   if (!lead) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Lead status not found");
+    throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
   }
 
   let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
   if (lead.leadHistory) {
     if (typeof lead.leadHistory === 'string') {
       leadHistory = JSON.parse(lead.leadHistory);
-    }
-    else {
+    } else {
       leadHistory = lead.leadHistory;
     }
   }
 
+  // Capture previous and upcoming status
+  const previousStatus = lead.leadStatus;
+  const upcomingStatus = updateBody.leadStatus;
+
+  // Add history entry
   leadHistory.push({
     action: 'Status Updated',
     timestamp: new Date().toISOString(),
-    details: { statusUpdatedBy: updateBody.userID }
+    details: {
+      statusUpdatedBy: updateBody.userID,
+      previousStatus: previousStatus,
+      upcomingStatus: upcomingStatus
+    }
   });
 
+  // Create updated data object
   const { ...updatedData } = updateBody;
-
   const updatedDataWithoutID = {
     ...updatedData,
     leadHistory: JSON.stringify(leadHistory)
   };
 
+  // Update the lead in the database
   const updatedLead = await connection("leads")
     .where({ id: leadId })
     .update(updatedDataWithoutID)
@@ -285,6 +348,7 @@ const updateLeadStatus = async (
   return updatedLead[0];
 };
 
+
 const createVisaCategory = async (
   connection: Knex,
   visaCategory: VisaCategory,
@@ -292,6 +356,7 @@ const createVisaCategory = async (
   const updatedVisaCategory = {
     ...visaCategory,
     id: uuidv4(),
+    category: visaCategory.category.toLowerCase()
   };
   const [insertedVisaCategory] = await connection("visaCategory")
     .insert(updatedVisaCategory)
@@ -367,6 +432,10 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string, use
       ...restOfLead,
       id: uuidv4(),
       tenantID: tenantId,
+      country: capitalizeFirstLetterOfEachWord(restOfLead.country),
+      state: capitalizeFirstLetterOfEachWord(restOfLead.state),
+      district: capitalizeFirstLetterOfEachWord(restOfLead.district),
+      city: capitalizeFirstLetterOfEachWord(restOfLead.city),
       passportExpiry: passportExpiry,
       userID: userID,
       visaCategory: String(restOfLead.visaCategory).toLowerCase(),
@@ -493,7 +562,6 @@ const assignLead = async (
 
   const getAssignees = await getAssigneById(connection, lead_id);
   const lead = await getLeadById(connection, lead_id);
-
   let finalUserIds;
   let actionMessage;
   let notificationMessages = [];
@@ -504,7 +572,7 @@ const assignLead = async (
       actionMessage = "Lead unassigned successfully";
       notificationMessages = getAssignees.user_id.map(id => ({
         user_id: id,
-        message: `You have been unassigned to Lead ID: ${lead_id}`,
+        message: `You have been unassigned to Lead ID: ${lead.firstname}`,
       }));
     } else {
       const existingUserIds = new Set(getAssignees.user_id);
@@ -516,7 +584,7 @@ const assignLead = async (
         notificationMessages.push(
           ...userIdsToAdd.map(id => ({
             user_id: id,
-            message: `You have been assigned to Lead ID: ${lead_id}`
+            message: `You have been assigned to Lead ID: ${lead.firstname}`
           }))
         );
       } else {
@@ -527,7 +595,7 @@ const assignLead = async (
         notificationMessages.push(
           ...userIdsToRemove.map(id => ({
             user_id: id,
-            message: `You have been unassigned to Lead ID: ${lead_id}`
+            message: `You have been unassigned to Lead: ${lead.firstname}`
           }))
         );
       }
@@ -548,7 +616,7 @@ const assignLead = async (
     actionMessage = "Lead assigned successfully";
     notificationMessages = user_id.map(id => ({
       user_id: id,
-      message: `You have been assigned to Lead ID: ${lead_id}`,
+      message: `You have been assigned to Lead: ${lead.firstname}`,
     }));
   }
 

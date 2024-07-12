@@ -46,6 +46,7 @@ const refreshAuth = async (connection: Knex, refreshToken: string) => {
       refreshToken,
       tokenTypes.REFRESH,
     );
+
     const user = await userService.getUserByID(
       connection,
       refreshTokenDoc.user,
@@ -59,6 +60,7 @@ const refreshAuth = async (connection: Knex, refreshToken: string) => {
       .del();
     return tokenService.generateAuthTokens(user, connection);
   } catch (error) {
+    console.log("Debugging ", error)
     throw new ApiError(httpStatus.UNAUTHORIZED, "2 Please authenticate");
   }
 };

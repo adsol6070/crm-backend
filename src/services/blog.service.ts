@@ -17,14 +17,14 @@ interface Blog {
 }
 
 interface UploadedFile {
-  fieldname: string; // Field name specified in the form
-  originalname: string; // Original file name on the user's computer
-  encoding: string; // Encoding type of the file
-  mimetype: string; // Mime type of the file
-  destination: string; // Folder to which the file has been saved
-  filename: string; // The name of the file within the destination
-  path: string; // The full path to the uploaded file
-  size: number; // The size of the file in bytes
+  fieldname: string; 
+  originalname: string; 
+  encoding: string; 
+  mimetype: string; 
+  destination: string; 
+  filename: string; 
+  path: string; 
+  size: number; 
 }
 
 interface BlogCategory {
