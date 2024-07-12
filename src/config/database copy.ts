@@ -21,10 +21,10 @@ const config: Record<"common" | "tenant", DatabaseConfig> = {
   common: {
     client: "pg",
     connection: {
-      host: "dpg-cq8c79uehbks738h2t5g-a",
-      user: "adsol",
-      password: "H0HewIrfGCDQ3A4kK8Zb8ehRLxwJ9vlP",
-      database: "demo_94e3",
+      host: "127.0.0.1",
+      user: "postgres",
+      password: "admin",
+      database: "tenants",
     },
     pool: {
       min: 2,

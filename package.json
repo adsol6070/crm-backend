@@ -7,7 +7,7 @@
     "node": ">=20.12.1"
   },
   "scripts": {
-    "build": "npm install && rimraf ./dist && tsc",
+    "build": "cross-env NODE_ENV=development npm install && rimraf ./dist && tsc",
     "dev": "cross-env NODE_ENV=development nodemon",
     "start": "npm run build && node ./dist/index.js",
     "migrate:make:common": "knex --knexfile src/config/knexfile.ts --env common migrate:make",
