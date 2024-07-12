@@ -45,8 +45,70 @@ const deleteGroupImage = async (tenantID: string, image: string) => {
   fs.unlinkSync(filePath);
 };
 
+const getChatFileById = async (
+  connection: Knex,
+  messageId: string,
+  tenantID: string,
+) => {
+  const message = await connection("messages").where({ id: messageId }).first();
+  if (!message) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Message not found");
+  }
+  const file = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    tenantID as string,
+    "ChatMessageFiles",
+    message.file_url,
+  );
+  return file;
+};
+
+const getGroupChatFileById = async (
+  connection: Knex,
+  messageId: string,
+  tenantID: string,
+) => {
+  const message = await connection("group_messages")
+    .where({ id: messageId })
+    .first();
+  if (!message) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Message not found");
+  }
+  const file = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    tenantID as string,
+    "ChatMessageFiles",
+    message.file_url,
+  );
+  return file;
+};
+
+const deleteChatFile = async (tenantID: string, file: string) => {
+  const filePath = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    tenantID as string,
+    "ChatMessageFiles",
+    file,
+  );
+
+  if (!fs.existsSync(filePath)) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Chat file not found");
+  }
+
+  fs.unlinkSync(filePath);
+};
+
 export default {
   getGroupImageById,
   getGroupById,
   deleteGroupImage,
+  getChatFileById,
+  getGroupChatFileById,
+  deleteChatFile,
 };

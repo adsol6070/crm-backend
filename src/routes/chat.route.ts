@@ -19,4 +19,17 @@ router
   .route("/groupImage/:groupId")
   .get(auth(), connectionRequest, chatController.getGroupImage);
 
+router
+  .route("/uploadChatFile")
+  .post(
+    auth(),
+    upload.single("chatFile"),
+    connectionRequest,
+    chatController.uploadChatFile,
+  );
+
+router
+  .route("/getChatFile")
+  .post(auth(), connectionRequest, chatController.getChatFile);
+
 export default router;

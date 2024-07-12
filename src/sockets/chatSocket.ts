@@ -7,6 +7,8 @@ import { Knex } from "knex";
 import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import { chatService } from "../services";
+import path from "path";
+import fs from "fs";
 
 const disconnectTimeouts = new Map();
 const loggedOutUsers = new Set();
@@ -48,10 +50,10 @@ export const setupChatSocket = (
             description: status
               ? "Online"
               : "Last seen at " +
-              new Date(user.last_active).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
+                new Date(user.last_active).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
           });
         }
       } catch (error) {
@@ -116,35 +118,43 @@ export const setupChatSocket = (
     };
 
     const sendNotification = async (userId: string, notification: any) => {
-      await socket.data.connection("message_notifications").insert({
-        id: notification.id,
-        user_id: userId,
-        name: notification.name,
-        subText: notification.subText,
-        avatar: notification.avatar,
-        createdAt: notification.createdAt,
-        read: false,
-      });
+      try {
+        await socket.data.connection("message_notifications").insert({
+          id: notification.id,
+          user_id: userId,
+          name: notification.name,
+          subText: notification.subText,
+          avatar: notification.avatar,
+          createdAt: notification.createdAt,
+          read: false,
+        });
 
-      io.to(userId.toString()).emit("messageNotification", notification);
+        io.to(userId.toString()).emit("messageNotification", notification);
+      } catch (error) {
+        handleError(error, "Error sending notification");
+      }
     };
 
     const handleDisconnect = () => {
-      if (socket.data.user && socket.data.connection) {
-        const userId = socket.data.user.id;
+      try {
+        if (socket.data.user && socket.data.connection) {
+          const userId = socket.data.user.id;
 
-        if (loggedOutUsers.has(userId)) {
-          loggedOutUsers.delete(userId);
-          logger.info("Client disconnected after logout");
-        } else {
-          const timeoutId = setTimeout(async () => {
-            await updateUserStatus(userId, false);
-            disconnectTimeouts.delete(userId);
-            logger.info("Client disconnected due to inactivity");
-          }, 10000);
+          if (loggedOutUsers.has(userId)) {
+            loggedOutUsers.delete(userId);
+            logger.info("Client disconnected after logout");
+          } else {
+            const timeoutId = setTimeout(async () => {
+              await updateUserStatus(userId, false);
+              disconnectTimeouts.delete(userId);
+              logger.info("Client disconnected due to inactivity");
+            }, 10000);
 
-          disconnectTimeouts.set(userId, timeoutId);
+            disconnectTimeouts.set(userId, timeoutId);
+          }
         }
+      } catch (error) {
+        handleError(error, "Error handling disconnect event");
       }
     };
 
@@ -163,25 +173,32 @@ export const setupChatSocket = (
     socket.on("requestInitialNotifications", async () => {
       try {
         if (socket.data.user && socket.data.connection) {
-          const leadNotications = await socket.data.connection('lead_notifications').where({ user_id: socket.data.user.id }).select("*").orderBy("created_at", "desc");
+          const leadNotications = await socket.data
+            .connection("lead_notifications")
+            .where({ user_id: socket.data.user.id })
+            .select("*")
+            .orderBy("created_at", "desc");
 
-          socket.emit("initialNotifications", leadNotications)
+          socket.emit("initialNotifications", leadNotications);
         }
       } catch (error) {
         console.error("Error requesting initial notifications:", error);
       }
-    })
+    });
 
     socket.on("clearAllNotifications", async () => {
       try {
         if (socket.data.connection && socket.data.user) {
-          await socket.data.connection("lead_notifications").where({ user_id: socket.data.user.id }).del();
+          await socket.data
+            .connection("lead_notifications")
+            .where({ user_id: socket.data.user.id })
+            .del();
           socket.emit("notificationsCleared");
         }
       } catch (error) {
         console.error("Error clearing notifications:", error);
       }
-    })
+    });
 
     socket.on("requestInitialUsers", async () => {
       try {
@@ -246,24 +263,31 @@ export const setupChatSocket = (
             )
             .where((builder: Knex.QueryBuilder) =>
               builder
-                .where("fromUserId", socket.data.user.id)
-                .andWhere("toUserId", userId)
+                .where((builder: Knex.QueryBuilder) =>
+                  builder
+                    .where("fromUserId", socket.data.user.id)
+                    .andWhere("toUserId", userId),
+                )
                 .orWhere((builder: Knex.QueryBuilder) =>
                   builder
                     .where("fromUserId", userId)
                     .andWhere("toUserId", socket.data.user.id),
                 ),
             )
-            .andWhere((builder: Knex.QueryBuilder) =>
-              builder
-                .whereNull("user_messages.user_id")
-                .orWhere("user_messages.user_id", "!=", socket.data.user.id),
-            )
             .orderBy("messages.timestamp", "asc");
 
           const chatHistory = await chatHistoryQuery;
 
-          socket.emit("chatHistory", chatHistory);
+          const filteredChatHistory = chatHistory.filter((msg: any) => {
+            const relatedMessages = chatHistory.filter(
+              (m: any) => m.message_id === msg.id,
+            );
+            return !relatedMessages.some(
+              (m: any) => m.user_id === socket.data.user.id,
+            );
+          });
+
+          socket.emit("chatHistory", filteredChatHistory);
         }
       } catch (error) {
         handleError(error, "Error fetching chat history");
@@ -294,7 +318,7 @@ export const setupChatSocket = (
           const notification = {
             id: uuidv4(),
             name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
-            subText: "This is the message",
+            subText: message,
             avatar: "",
             createdAt: new Date(),
           };
@@ -310,10 +334,112 @@ export const setupChatSocket = (
               newMessage,
             );
           }
-          socket.emit("messageSent", newMessage);
         }
       } catch (error) {
         handleError(error, "Error sending message");
+      }
+    });
+
+    socket.on("sendFileMessage", async (data) => {
+      try {
+        if (socket.data.user && socket.data.connection) {
+          const {
+            toUserId,
+            message,
+            fileUrl,
+            fileType,
+            fileName,
+            fileSize,
+            fromUserId,
+          } = data;
+          const newMessage = {
+            id: uuidv4(),
+            fromUserId,
+            toUserId,
+            message,
+            file_url: fileUrl,
+            file_type: fileType,
+            file_name: fileName,
+            file_size: fileSize,
+          };
+          await socket.data.connection("messages").insert(newMessage);
+          if (toUserId === socket.data.user.id) {
+            io.to(toUserId.toString()).emit("receiveMessage", newMessage);
+          } else {
+            io.to(toUserId.toString()).emit("receiveMessage", newMessage);
+            io.to(socket.data.user.id.toString()).emit(
+              "receiveMessage",
+              newMessage,
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error sending file message:", error);
+      }
+    });
+
+    socket.on("sendGroupFileMessage", async (data) => {
+      try {
+        if (socket.data.user && socket.data.connection) {
+          const {
+            groupId,
+            message,
+            fileUrl,
+            fileType,
+            fileName,
+            fileSize,
+            fromUserId,
+          } = data;
+          const newMessage = {
+            id: uuidv4(),
+            group_id: groupId,
+            from_user_id: fromUserId,
+            message,
+            file_url: fileUrl,
+            file_type: fileType,
+            file_name: fileName,
+            file_size: fileSize,
+            read_by: JSON.stringify([fromUserId]),
+          };
+
+          await socket.data.connection("group_messages").insert(newMessage);
+          const user = await socket.data
+            .connection("users")
+            .where({ id: fromUserId })
+            .first();
+          const messageWithUser = {
+            ...newMessage,
+            user: {
+              id: user.id,
+              firstname: user.firstname,
+              lastname: user.lastname,
+            },
+          };
+
+          const groupUsers = await socket.data
+            .connection("group_users")
+            .where({ group_id: groupId, is_active: true })
+            .select("user_id");
+
+          groupUsers.forEach(({ user_id }: any) => {
+            io.to(user_id.toString()).emit(
+              "receiveGroupMessage",
+              messageWithUser,
+            );
+
+            const notification = {
+              id: uuidv4(),
+              name: `${user.firstname} ${user.lastname}`,
+              subText: "Sent a file",
+              avatar: "",
+              createdAt: new Date(),
+            };
+
+            sendNotification(user_id, notification);
+          });
+        }
+      } catch (error) {
+        console.error("Error sending group file message:", error);
       }
     });
 
@@ -360,39 +486,171 @@ export const setupChatSocket = (
       }
     });
 
-    socket.on("forwardMessage", async ({ toUserIds, messageId }) => {
+    /* 
+    
+
+    Use Case 1. The sender Forward the Message to their own
+       e.g. toUserIds ["senderId"]
+       ToUsersIds: [ '14e9bef1-26b0-415e-a5ac-02f47bafa502' ]
+    Use Case 2. The sender Forward the Message to other person including own 
+       e.g. toUserIds ["senderId", "other1"]
+       ToUsersIds: ['14e9bef1-26b0-415e-a5ac-02f47bafa502', '29a6df70-a6d2-49f8-a84b-9e9ee3024eca']
+    Use Case 3. The sender Forward the Message to other person excluding own 
+       e.g. toUserIds ["other1", "other2"]
+
+    */
+
+    socket.on("forwardMessage", async ({ toUserIds, messageId, isGroup }) => {
       try {
+        // console.log("ToUsersIds:", toUserIds);
         if (socket.data.user && socket.data.connection) {
-          const message = await socket.data
-            .connection("messages")
-            .where({ id: messageId })
-            .first();
+          let message;
+
+          if (isGroup) {
+            message = await socket.data
+              .connection("group_messages")
+              .where({ id: messageId })
+              .first();
+            console.log("GroupMessage part called:", message);
+          } else {
+            message = await socket.data
+              .connection("messages")
+              .where({ id: messageId })
+              .first();
+            console.log("Message part called:", message);
+          }
+
           if (message) {
+            let newFileName = null;
+
+            if (message.file_url && message.file_type && message.file_name) {
+              const tenantID = socket.data.user.tenantID;
+              const originalFilePath = path.join(
+                __dirname,
+                "..",
+                "uploads",
+                tenantID,
+                "ChatMessageFiles",
+                message.file_url,
+              );
+
+              const timestamp = Date.now();
+              newFileName = `chatFile-${timestamp}-${message.file_name}`;
+              const newFilePath = path.join(
+                __dirname,
+                "..",
+                "uploads",
+                tenantID,
+                "ChatMessageFiles",
+                newFileName,
+              );
+
+              fs.copyFileSync(originalFilePath, newFilePath);
+            }
+
             const newMessages = toUserIds.map((toUserId: string) => ({
               id: uuidv4(),
               fromUserId: socket.data.user.id,
               toUserId,
               message: message.message,
+              file_url: newFileName ? newFileName : message.file_url,
+              file_type: message.file_type,
+              file_name: message.file_name,
               timestamp: new Date(),
             }));
 
             await socket.data.connection("messages").insert(newMessages);
 
-            toUserIds.forEach((toUserId: string) => {
-              const notification = {
-                id: uuidv4(),
-                name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
-                subText: "This is the message",
-                avatar: "",
-                createdAt: new Date(),
-              };
+            console.log("ToUserIds:", toUserIds.length);
 
-              sendNotification(toUserId, notification);
-
-              socket.to(toUserId.toString()).emit("receiveMessage", {
-                ...newMessages.find((msg: any) => msg.toUserId === toUserId),
+            if (toUserIds.length === 1) {
+              if (toUserIds[0] === socket.data.user.id) {
+                io.to(socket.data.user.id.toString()).emit("receiveMessage", {
+                  ...newMessages[0],
+                });
+              } else {
+                io.to(socket.data.user.id.toString()).emit("receiveMessage", {
+                  ...newMessages[0],
+                });
+                io.to(toUserIds[0]).emit("receiveMessage", {
+                  ...newMessages[0],
+                });
+              }
+            } else {
+              // Block for forwarding to multiple users
+              toUserIds.forEach((toUserId: string) => {
+                if (toUserId === socket.data.user.id) {
+                  io.to(toUserId.toString()).emit("receiveMessage", {
+                    ...newMessages.find(
+                      (msg: any) => msg.toUserId === toUserId,
+                    ),
+                  });
+                } else {
+                  io.to(socket.data.user.id.toString()).emit("receiveMessage", {
+                    ...newMessages.find(
+                      (msg: any) => msg.toUserId === toUserId,
+                    ),
+                  });
+                  io.to(toUserId.toString()).emit("receiveMessage", {
+                    ...newMessages.find(
+                      (msg: any) => msg.toUserId === toUserId,
+                    ),
+                  });
+                }
               });
-            });
+            }
+
+            // if (
+            //   toUserIds.length === 1 &&
+            //   toUserIds[0] === socket.data.user.id
+            // ) {
+            //   // Case 1: toUserIds only contains the sender's ID
+            //   io.to(socket.data.user.id.toString()).emit("receiveMessage", {
+            //     ...newMessages.find(
+            //       (msg: any) => msg.toUserId === socket.data.user.id,
+            //     ),
+            //   });
+            // } else {
+            //   // Case 2: toUserIds contains other IDs as well
+            //   toUserIds.forEach((toUserId: string) => {
+            //     const notification = {
+            //       id: uuidv4(),
+            //       name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
+            //       subText: message.message,
+            //       avatar: "",
+            //       createdAt: new Date(),
+            //     };
+
+            //     sendNotification(toUserId, notification);
+
+            //     io.to(toUserId.toString()).emit("receiveMessage", {
+            //       ...newMessages.find((msg: any) => msg.toUserId === toUserId),
+            //     });
+            //   });
+
+            //   if (
+            //     toUserIds.length > 1 &&
+            //     toUserIds.includes(socket.data.user.id)
+            //   ) {
+            //     io.to(socket.data.user.id.toString()).emit("receiveMessage", {
+            //       ...newMessages.find(
+            //         (msg: any) =>
+            //           msg.fromUserId === socket.data.user.id &&
+            //           msg.toUserId === toUserIds[0],
+            //       ),
+            //     });
+            //   }
+
+            //   if (!toUserIds.includes(socket.data.user.id)) {
+            //     io.to(socket.data.user.id.toString()).emit("receiveMessage", {
+            //       ...newMessages.find(
+            //         (msg: any) =>
+            //           msg.fromUserId === socket.data.user.id &&
+            //           msg.toUserId === toUserIds[0],
+            //       ),
+            //     });
+            //   }
+            // }
           }
         }
       } catch (error) {
@@ -454,7 +712,7 @@ export const setupChatSocket = (
               const notification = {
                 id: uuidv4(),
                 name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
-                subText: "This is the message",
+                subText: `You have been added to the group: ${groupName}`,
                 avatar: "",
                 createdAt: new Date(),
               };
@@ -510,8 +768,8 @@ export const setupChatSocket = (
             const notification = {
               id: uuidv4(),
               name: `${socket.data.user.firstname} ${socket.data.user.lastname}`,
-              subText: "This is the message",
-              avatar: "",
+              subText: message,
+              avatar: user.profileImage || "",
               createdAt: new Date(),
             };
 
@@ -543,6 +801,11 @@ export const setupChatSocket = (
               "user_group_messages.group_message_id",
             )
             .where("group_messages.group_id", groupId)
+            .andWhere((query: Knex.QueryBuilder) => {
+              query
+                .where("excluded_user_id", "!=", socket.data.user.id)
+                .orWhereNull("excluded_user_id");
+            })
             .orderBy("group_messages.timestamp", "asc");
 
           if (userGroup.disable_date) {
@@ -555,6 +818,15 @@ export const setupChatSocket = (
 
           const groupChatHistory = await groupChatHistoryQuery;
 
+          console.log("GroupChatHistory:", groupChatHistory);
+
+          const personalNotifications = await socket.data
+            .connection("personal_notifications")
+            .where({ user_id: socket.data.user.id, group_id: groupId })
+            .orderBy("created_at", "asc");
+
+          console.log("PersonalNotifications:", personalNotifications);
+
           const filteredGroupChatHistory = groupChatHistory.filter(
             (msg: any) => {
               const relatedMessages = groupChatHistory.filter(
@@ -566,9 +838,28 @@ export const setupChatSocket = (
             },
           );
 
-          const userIds = filteredGroupChatHistory.map(
-            (msg: any) => msg.from_user_id,
-          );
+          const combinedHistory = [
+            ...filteredGroupChatHistory,
+            ...personalNotifications.map((notification: any) => ({
+              id: notification.id,
+              group_id: notification.group_id,
+              from_user_id: null,
+              message: notification.message,
+              system: true,
+              excluded_user_id: null,
+              timestamp: notification.created_at,
+            })),
+          ];
+
+          combinedHistory.sort((a: any, b: any) => {
+            const dateA = new Date(a.timestamp).getTime();
+            const dateB = new Date(b.timestamp).getTime();
+            return dateA - dateB;
+          });
+
+          console.log("CombinedHistory:", combinedHistory);
+
+          const userIds = combinedHistory.map((msg: any) => msg.from_user_id);
 
           const uniqueUserIds = [...new Set(userIds)];
           const users = await socket.data
@@ -600,7 +891,7 @@ export const setupChatSocket = (
             return acc;
           }, {});
 
-          const modifiedGroupChatHistory = filteredGroupChatHistory.map(
+          const modifiedGroupChatHistory = combinedHistory.map(
             ({ from_user_id, ...chat }: any) => ({
               ...chat,
               fromUserId: from_user_id,
@@ -724,6 +1015,8 @@ export const setupChatSocket = (
             )
             .first();
 
+          const adderId = socket.data.user.id;
+
           const group = await socket.data
             .connection("groups")
             .where({ id: groupId })
@@ -731,7 +1024,7 @@ export const setupChatSocket = (
 
           const groupUsers = await socket.data
             .connection("group_users")
-            .where({ group_id: groupId })
+            .where({ group_id: groupId, is_active: true })
             .select("user_id");
 
           const groupDetails = {
@@ -747,7 +1040,20 @@ export const setupChatSocket = (
             from_user_id: null,
             message: `${user.firstname} ${user.lastname} has rejoined the group.`,
             system: true,
+            read_by: JSON.stringify([adderId]),
           };
+
+          const personalNotificationMessage = {
+            id: uuidv4(),
+            user_id: adderId,
+            group_id: groupId,
+            message: `You added ${user.firstname} ${user.lastname} to the group.`,
+            system: true,
+          };
+
+          await socket.data
+            .connection("personal_notifications")
+            .insert(personalNotificationMessage);
 
           await socket.data
             .connection("group_messages")
@@ -759,13 +1065,20 @@ export const setupChatSocket = (
               userId,
               user,
             });
-            io.to(user_id.toString()).emit(
-              "userRejoinedNotification",
-              notificationMessage,
-            );
+            if (user_id !== adderId) {
+              io.to(user_id.toString()).emit(
+                "userRejoinedNotification",
+                notificationMessage,
+              );
+            }
           });
 
           io.to(userId.toString()).emit("groupReenabled", groupDetails);
+
+          io.to(adderId.toString()).emit(
+            "userRejoinedNotification",
+            personalNotificationMessage,
+          );
         }
       } catch (error) {
         handleError(error, "Error adding user to group");
@@ -779,6 +1092,8 @@ export const setupChatSocket = (
             .connection("group_users")
             .where({ group_id: groupId })
             .select("user_id");
+
+          const removerId = socket.data.user.id;
 
           if (groupUsers.length === 1 && groupUsers[0].user_id === userId) {
             socket.emit("confirmDeleteLastUser", {
@@ -807,7 +1122,20 @@ export const setupChatSocket = (
               from_user_id: null,
               message: `${user.firstname} ${user.lastname} was removed by admin.`,
               system: true,
+              excluded_user_id: removerId,
             };
+
+            const personalNotificationMessage = {
+              id: uuidv4(),
+              user_id: removerId,
+              group_id: groupId,
+              message: `You removed ${user.firstname} ${user.lastname}.`,
+              system: true,
+            };
+
+            await socket.data
+              .connection("personal_notifications")
+              .insert(personalNotificationMessage);
 
             await socket.data
               .connection("group_messages")
@@ -819,16 +1147,24 @@ export const setupChatSocket = (
                 userId,
                 removedByAdmin: true,
               });
-              io.to(user_id.toString()).emit(
-                "userRemovedNotification",
-                notificationMessage,
-              );
+
+              if (user_id !== removerId && user_id !== userId) {
+                io.to(user_id.toString()).emit(
+                  "userRemovedNotification",
+                  notificationMessage,
+                );
+              }
             });
 
             io.to(userId.toString()).emit("groupDisabled", {
               groupId,
               removedByAdmin: true,
             });
+
+            io.to(removerId.toString()).emit(
+              "userRemovedNotification",
+              personalNotificationMessage,
+            );
           }
         }
       } catch (error) {
@@ -871,6 +1207,34 @@ export const setupChatSocket = (
       }
     });
 
+    // socket.on("deleteGroup", async ({ groupId }) => {
+    //   try {
+    //     if (socket.data.user && socket.data.connection) {
+    //       const userId = socket.data.user.id;
+
+    //       const groupUser = await socket.data
+    //         .connection("group_users")
+    //         .where({ group_id: groupId, user_id: userId })
+    //         .first();
+
+    //       if (!groupUser) {
+    //         throw new ApiError(httpStatus.NOT_FOUND, "User not found in group");
+    //       }
+
+    //       if (groupUser.is_active === false) {
+    //         await socket.data
+    //           .connection("group_users")
+    //           .where({ group_id: groupId, user_id: userId })
+    //           .del();
+
+    //         socket.emit("groupDeletedForUser", { groupId });
+    //       }
+    //     }
+    //   } catch (error) {
+    //     handleError(error, "Error deleting group");
+    //   }
+    // });
+
     socket.on("deleteGroup", async ({ groupId }) => {
       try {
         if (socket.data.user && socket.data.connection) {
@@ -886,39 +1250,44 @@ export const setupChatSocket = (
           }
 
           if (groupUser.is_active === false) {
-            await socket.data
+            const groupUsers = await socket.data
               .connection("group_users")
-              .where({ group_id: groupId, user_id: userId })
-              .del();
+              .where({ group_id: groupId });
 
-            socket.emit("groupDeletedForUser", { groupId });
-          } else {
-            const group = await socket.data
-              .connection("groups")
-              .where({ id: groupId })
-              .first();
+            if (groupUsers.length === 1 && groupUsers[0].user_id === userId) {
+              await socket.data
+                .connection("group_users")
+                .where({ group_id: groupId })
+                .del();
 
-            if (!group) {
-              throw new ApiError(httpStatus.NOT_FOUND, "Group not found");
+              await socket.data
+                .connection("group_messages")
+                .where({ group_id: groupId })
+                .del();
+
+              const group = await socket.data
+                .connection("groups")
+                .where({ id: groupId })
+                .first();
+
+              await socket.data
+                .connection("groups")
+                .where({ id: groupId })
+                .del();
+
+              await chatService.deleteGroupImage(group.tenantID, group.image);
+
+              socket.emit("groupDeleted", {
+                groupId,
+              });
+            } else {
+              await socket.data
+                .connection("group_users")
+                .where({ group_id: groupId, user_id: userId })
+                .del();
+
+              socket.emit("groupDeleted", { groupId });
             }
-
-            await socket.data
-              .connection("group_users")
-              .where({ group_id: groupId })
-              .del();
-
-            await socket.data
-              .connection("group_messages")
-              .where({ group_id: groupId })
-              .del();
-
-            await socket.data.connection("groups").where({ id: groupId }).del();
-
-            await chatService.deleteGroupImage(group.tenantID, group.image);
-
-            io.emit("groupDeleted", {
-              groupId,
-            });
           }
         }
       } catch (error) {
@@ -985,22 +1354,46 @@ export const setupChatSocket = (
               .first();
 
             if (message && message.from_user_id === socket.data.user.id) {
-              await socket.data
-                .connection("group_messages")
-                .where({ id: messageId, group_id: groupId })
-                .del();
-
-              const groupUsers = await socket.data
-                .connection("group_users")
-                .where({ group_id: groupId })
-                .select("user_id");
-
-              groupUsers.forEach(({ user_id }: { user_id: string }) => {
-                io.to(user_id.toString()).emit(
-                  "groupMessageDeletedForEveryone",
-                  { messageId },
+              if (message.file_url && message.file_type && message.file_name) {
+                await chatService.deleteChatFile(
+                  socket.data.user.tenantID,
+                  message.file_url,
                 );
-              });
+
+                await socket.data
+                  .connection("group_messages")
+                  .where({ id: messageId, group_id: groupId })
+                  .del();
+
+                const groupUsers = await socket.data
+                  .connection("group_users")
+                  .where({ group_id: groupId })
+                  .select("user_id");
+
+                groupUsers.forEach(({ user_id }: { user_id: string }) => {
+                  io.to(user_id.toString()).emit(
+                    "groupMessageDeletedForEveryone",
+                    { messageId },
+                  );
+                });
+              } else {
+                await socket.data
+                  .connection("group_messages")
+                  .where({ id: messageId, group_id: groupId })
+                  .del();
+
+                const groupUsers = await socket.data
+                  .connection("group_users")
+                  .where({ group_id: groupId })
+                  .select("user_id");
+
+                groupUsers.forEach(({ user_id }: { user_id: string }) => {
+                  io.to(user_id.toString()).emit(
+                    "groupMessageDeletedForEveryone",
+                    { messageId },
+                  );
+                });
+              }
             }
           }
         } catch (error) {
@@ -1042,7 +1435,25 @@ export const setupChatSocket = (
             })
             .first();
 
-          if (message) {
+          if (message.file_url && message.file_type && message.file_name) {
+            await chatService.deleteChatFile(
+              socket.data.user.tenantID,
+              message.file_url,
+            );
+
+            await socket.data
+              .connection("messages")
+              .where({ id: messageId })
+              .del();
+
+            io.to(userId.toString()).emit("messageDeletedForEveryone", {
+              messageId,
+            });
+            io.to(socket.data.user.id.toString()).emit(
+              "messageDeletedForEveryone",
+              { messageId },
+            );
+          } else {
             await socket.data
               .connection("messages")
               .where({ id: messageId })
@@ -1062,13 +1473,76 @@ export const setupChatSocket = (
       }
     });
 
+    socket.on("deleteSelfMessage", async ({ messageId }) => {
+      try {
+        if (socket.data.user && socket.data.connection) {
+          const { user } = socket.data;
+
+          // Retrieve the message to be deleted
+          const message = await socket.data
+            .connection("messages")
+            .where({
+              id: messageId,
+              fromUserId: user.id,
+              toUserId: user.id,
+            })
+            .first();
+
+          if (message) {
+            // If the message has a file associated with it, delete the file
+            if (message.file_url) {
+              await chatService.deleteChatFile(user.tenantID, message.file_url);
+            }
+
+            // Delete the message from the database
+            await socket.data
+              .connection("messages")
+              .where({ id: messageId, fromUserId: user.id })
+              .del();
+
+            // Notify the client that the message has been deleted
+            socket.emit("messageDeletedForSelf", { messageId });
+          }
+        }
+      } catch (error) {
+        handleError(error, "Error deleting self message");
+      }
+    });
+
     socket.on("deleteMessageForMe", async ({ messageId }) => {
       try {
         if (socket.data.user && socket.data.connection) {
-          await socket.data.connection("user_messages").insert({
-            user_id: socket.data.user.id,
-            message_id: messageId,
-          });
+          const existingEntries = await socket.data
+            .connection("user_messages")
+            .where({ message_id: messageId });
+
+          if (existingEntries.length > 0) {
+            const message = await socket.data
+              .connection("messages")
+              .where({ id: messageId })
+              .first();
+
+            if (message.file_url && message.file_type && message.file_name) {
+              await chatService.deleteChatFile(
+                socket.data.user.tenantID,
+                message.file_url,
+              );
+            }
+
+            await socket.data
+              .connection("messages")
+              .where({ id: messageId })
+              .del();
+            await socket.data
+              .connection("user_messages")
+              .where({ message_id: messageId })
+              .del();
+          } else {
+            await socket.data.connection("user_messages").insert({
+              user_id: socket.data.user.id,
+              message_id: messageId,
+            });
+          }
 
           socket.emit("messageDeletedForMe", { messageId });
         }
@@ -1080,22 +1554,57 @@ export const setupChatSocket = (
     socket.on("leaveGroup", async ({ groupId }) => {
       try {
         if (socket.data.user && socket.data.connection) {
-          const groupUsers = await socket.data
-            .connection("group_users")
-            .where({ group_id: groupId })
-            .select("user_id");
-
           const userId = socket.data.user.id;
           const group = await socket.data
             .connection("groups")
             .where({ id: groupId })
             .first();
 
+          const groupUsers = await socket.data
+            .connection("group_users")
+            .where({ group_id: groupId, is_active: true })
+            .select("user_id");
+
+          const user = await socket.data
+            .connection("users")
+            .where({ id: userId })
+            .select("firstname", "lastname")
+            .first();
+
+          const notificationMessage = {
+            id: uuidv4(),
+            group_id: groupId,
+            from_user_id: null,
+            message: `${user.firstname} ${user.lastname} left the group.`,
+            system: true,
+            excluded_user_id: userId,
+          };
+
+          const personalNotificationMessage = {
+            id: uuidv4(),
+            user_id: userId,
+            group_id: groupId,
+            message: `You left the group.`,
+            system: true,
+          };
+
           if (groupUsers.length === 1 && groupUsers[0].user_id === userId) {
-            socket.emit("confirmDeleteLastUser", { groupId, userId });
+            await socket.data
+              .connection("group_users")
+              .where({ group_id: groupId, user_id: userId })
+              .update({
+                is_active: false,
+                disable_date: new Date(),
+              });
+
+            socket.emit("groupDisabled", { groupId, removedByAdmin: false });
           } else {
             if (group.creator_id === userId) {
               socket.emit("promptSelectNewOwner", { groupId });
+              notificationMessage.message = `${user.firstname} ${user.lastname} left the group and a new owner is being selected.`;
+              await socket.data
+                .connection("group_messages")
+                .insert(notificationMessage);
             } else {
               await socket.data
                 .connection("group_users")
@@ -1106,25 +1615,22 @@ export const setupChatSocket = (
                   removed_by_admin: false,
                 });
 
-              const user = await socket.data
-                .connection("users")
-                .where({ id: userId })
-                .select("firstname", "lastname")
-                .first();
-
-              const notificationMessage = {
-                id: uuidv4(),
-                group_id: groupId,
-                from_user_id: null,
-                message: `${user.firstname} ${user.lastname} left the group.`,
-                system: true,
-              };
-
               await socket.data
                 .connection("group_messages")
                 .insert(notificationMessage);
 
-              groupUsers.forEach(({ user_id }: any) => {
+              io.to(userId.toString()).emit("groupDisabled", {
+                groupId,
+                removedByAdmin: false,
+              });
+            }
+
+            await socket.data
+              .connection("personal_notifications")
+              .insert(personalNotificationMessage);
+
+            groupUsers.forEach(({ user_id }: any) => {
+              if (user_id !== userId) {
                 io.to(user_id.toString()).emit("userRemovedFromGroup", {
                   groupId,
                   userId,
@@ -1134,13 +1640,19 @@ export const setupChatSocket = (
                   "userRemovedNotification",
                   notificationMessage,
                 );
-              });
+              }
+            });
 
-              io.to(userId.toString()).emit("groupDisabled", {
-                groupId,
-                removedByAdmin: false,
-              });
-            }
+            io.to(userId.toString()).emit("userRemovedFromGroup", {
+              groupId,
+              userId,
+              removedByAdmin: false,
+            });
+
+            io.to(userId.toString()).emit(
+              "userRemovedNotification",
+              personalNotificationMessage,
+            );
           }
         }
       } catch (error) {
@@ -1221,7 +1733,7 @@ export const setupChatSocket = (
     });
   });
 
-  return io
+  return io;
 };
 
 function handleError(error: unknown, context: string) {
