@@ -25,8 +25,20 @@ import knex from "knex";
 //   res.status(httpStatus.OK).send({ tenant: { ...tenant } });
 // });
 
+const ensureTenantsTableExists = async () => {
+  const exists = await commonKnex.schema.hasTable("tenants");
+  if (!exists) {
+    await commonKnex.schema.createTable("tenants", (table) => {
+      table.uuid("tenantID").primary();
+      table.string("name").notNullable();
+      table.json("db_connection").notNullable();
+      table.boolean("active").defaultTo(true);
+      table.timestamps(true, true);
+    });
+  }
+};
+
 const createTenant = catchAsync(async (req: Request, res: Response) => {
-  console.log("Create Tenant Controller hitted..");
   const { organization } = req.body;
   const tenantID = uuidv4();
   const username = `tenant_${organization.toLowerCase()}`;
@@ -39,6 +51,8 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
     password,
     database: databaseName,
   };
+
+  await ensureTenantsTableExists();
 
   // Step 1: Create the tenant's database
   await commonKnex.raw(`CREATE DATABASE "${dbConnection.database}"`);
@@ -90,8 +104,6 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
   await superTenantKnex.raw(
     `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "${dbConnection.user}";`,
   );
-
-  console.log("Before Inserting into Tenants Table.");
 
   // Insert the new tenant's configuration into the common 'tenants' table
   await commonKnex("tenants").insert({
