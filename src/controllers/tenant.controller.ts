@@ -33,7 +33,7 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
   const databaseName = `tenant_db_${organization.toLowerCase()}`;
 
   const dbConnection = {
-    host: process.env.DB_HOST || "localhost",
+    host: "dpg-cq92rs2ju9rs73av4h7g-a",
     user: username,
     password,
     database: databaseName,
@@ -52,8 +52,8 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
     client: "pg",
     connection: {
       host: dbConnection.host,
-      user: process.env.DB_SUPERUSER || "postgres",
-      password: "admin",
+      user: "tenants_user",
+      password: "Et5qOSWSEjVyAbd6p1xvyI0CXQlkNCcK",
       database: dbConnection.database,
     },
   });
