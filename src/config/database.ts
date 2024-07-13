@@ -21,9 +21,9 @@ const config: Record<"common" | "tenant", DatabaseConfig> = {
   common: {
     client: "pg",
     connection: {
-      host: "dpg-cq92rs2ju9rs73av4h7g-a",
-      user: "tenants_user",
-      password: "Et5qOSWSEjVyAbd6p1xvyI0CXQlkNCcK",
+      host: "127.0.0.1",
+      user: "postgres",
+      password: "admin",
       database: "tenants",
     },
     pool: {
