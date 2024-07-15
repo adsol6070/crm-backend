@@ -59,7 +59,7 @@ const sendEmail = async (
 
 const sendResetPasswordEmail = async (to: string, token: string) => {
   const subject = "Reset password";
-  const resetPasswordUrl = `http://localhost:5173/auth/reset-password?token=${token}`;
+  const resetPasswordUrl = `http://:5173/auth/reset-password?token=${token}`;
   await sendEmail(to, subject, "resetPassword", { link: resetPasswordUrl });
 };
 
