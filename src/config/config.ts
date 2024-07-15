@@ -5,8 +5,8 @@ import path from "path";
 // Load environment variables based on the NODE_ENV
 const envFile =
   process.env.NODE_ENV === "production" ? "env.production" : "env.development";
-// dotenv.config({ path: path.join(__dirname, `../../.${envFile}`) });
-dotenv.config({ path: path.join(__dirname, `../../.env.development`) });
+dotenv.config({ path: path.join(__dirname, `../../.${envFile}`) });
+// dotenv.config({ path: path.join(__dirname, `../../.env.development`) });
 
 // Define the expected environment variables and their types
 interface EnvironmentVariables {

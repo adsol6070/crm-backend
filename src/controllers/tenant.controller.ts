@@ -7,23 +7,7 @@ import { commonKnex } from "../config/database";
 import { connectionService, tenantService } from "../services";
 import { Request, Response } from "express";
 import knex from "knex";
-
-// const createTenant = catchAsync(async (req: Request, res: Response) => {
-//   const { organization } = req.body;
-
-//   const tenantName = slugify(organization.toLowerCase(), "_");
-//   const password = generator.generate({ length: 12, numbers: true });
-//   const uuid = uuidv4();
-//   const tenant = {
-//     uuid,
-//     db_name: tenantName,
-//     db_username: tenantName,
-//     db_password: password,
-//   };
-//   await db("tenants").insert(tenant);
-//   await tenantService.up({ tenantName, password, uuid });
-//   res.status(httpStatus.OK).send({ tenant: { ...tenant } });
-// });
+import config from "../config/config";
 
 const createTenant = catchAsync(async (req: Request, res: Response) => {
   const { organization } = req.body;
@@ -33,11 +17,14 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
   const databaseName = `tenant_db_${organization.toLowerCase()}`;
 
   const dbConnection = {
-    host: process.env.DB_HOST || "localhost",
+    host: config.postgres.connection.host,
     user: username,
     password,
     database: databaseName,
   };
+
+  // Run all migrations related to commonKnex first
+  await commonKnex.migrate.latest();
 
   // Step 1: Create the tenant's database
   await commonKnex.raw(`CREATE DATABASE "${dbConnection.database}"`);
@@ -49,11 +36,11 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
 
   // Connect to the tenant's database as a superuser
   const superTenantKnex = knex({
-    client: "pg",
+    client: config.postgres.client,
     connection: {
       host: dbConnection.host,
-      user: process.env.DB_SUPERUSER || "postgres",
-      password: "admin",
+      user: config.postgres.connection.user,
+      password: config.postgres.connection.password,
       database: dbConnection.database,
     },
   });
@@ -113,7 +100,7 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
 
   res
     .status(httpStatus.CREATED)
-    .json({ message: "Tenant created successfully", dbConnection, tenantID });
+    .json({ message: "Tenant created successfully", tenantID });
 });
 
 // const deleteTenant = catchAsync(async (req: Request, res: Response) => {

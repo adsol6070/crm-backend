@@ -1,4 +1,6 @@
 import { knex, type Knex } from "knex";
+import path from "path";
+import envConfig from "./config";
 
 interface DatabaseConfig {
   client: string;
@@ -17,21 +19,26 @@ interface DatabaseConfig {
   };
 }
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const config: Record<"common" | "tenant", DatabaseConfig> = {
   common: {
-    client: "pg",
+    client: envConfig.postgres.client,
     connection: {
-      host: "127.0.0.1",
-      user: "postgres",
-      password: "admin",
-      database: "tenants",
+      host: envConfig.postgres.connection.host,
+      user: envConfig.postgres.connection.user,
+      password: envConfig.postgres.connection.password,
+      database: envConfig.postgres.connection.database,
     },
     pool: {
       min: 2,
       max: 10,
     },
     migrations: {
-      directory: "../migrations/common",
+      directory: path.join(
+        __dirname,
+        isProduction ? "../../dist/migrations/common" : "../migrations/common",
+      ),
     },
   },
 
@@ -48,7 +55,10 @@ const config: Record<"common" | "tenant", DatabaseConfig> = {
       max: 10,
     },
     migrations: {
-      directory: "../migrations/tenant",
+      directory: path.join(
+        __dirname,
+        isProduction ? "../../dist/migrations/tenant" : "../migrations/tenant",
+      ),
     },
   },
 };

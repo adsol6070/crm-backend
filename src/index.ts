@@ -7,7 +7,7 @@ import { setupChatSocket } from "./sockets/chatSocket";
 
 // Define server and custom socket interface
 let server: any;
-let io: any
+let io: any;
 
 const startServer = async () => {
   try {
@@ -62,4 +62,4 @@ process.on("SIGINT", () => {
 
 startServer();
 
-export { io }
+export { io };

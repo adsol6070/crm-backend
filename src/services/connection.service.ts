@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "async_hooks";
 import knex, { Knex } from "knex";
+import path from "path";
 import logger from "../config/logger";
 import { config, commonKnex } from "../config/database";
 
@@ -18,6 +19,8 @@ interface Tenant {
 const asyncLocalStorage = new AsyncLocalStorage<{ knex: Knex }>();
 const tenantConnectionPools: Record<string, Knex> = {};
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const getTenantKnex = (tenant: Tenant): Knex => {
   try {
     if (!tenantConnectionPools[tenant.name]) {
@@ -31,7 +34,12 @@ const getTenantKnex = (tenant: Tenant): Knex => {
           database: tenant.db_connection.database,
         },
         migrations: {
-          directory: "./src/migrations/tenant",
+          directory: path.join(
+            __dirname,
+            isProduction
+              ? "../../dist/migrations/tenant"
+              : "../migrations/tenant",
+          ),
         },
         pool: { min: 2, max: 10 },
         acquireConnectionTimeout: 10000,
