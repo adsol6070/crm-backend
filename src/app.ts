@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
 const corsOptions = {
-  origin: "https://adsoldashboard.netlify.app",
+  origin: `${config.frontendUrl}`,
   credentials: true,
 };
 app.use(cors(corsOptions));

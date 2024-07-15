@@ -9,6 +9,7 @@ import httpStatus from "http-status";
 import { chatService } from "../services";
 import path from "path";
 import fs from "fs";
+import config from "../config/config";
 
 const disconnectTimeouts = new Map();
 const loggedOutUsers = new Set();
@@ -18,7 +19,7 @@ export const setupChatSocket = (
 ) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: "https://adsoldashboard.netlify.app",
+      origin: `${config.frontendUrl}`,
       methods: ["GET", "POST"],
     },
   });

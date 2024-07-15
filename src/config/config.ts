@@ -30,6 +30,7 @@ interface EnvironmentVariables {
   SMTP_USERNAME: string;
   SMTP_PASSWORD: string;
   EMAIL_FROM: string;
+  FRONTEND_URL: string;
 }
 
 // Define the schema for validating environment variables
@@ -62,6 +63,7 @@ const envVarsSchema = Joi.object<EnvironmentVariables>({
   EMAIL_FROM: Joi.string().description(
     "the from field in the emails sent by the app",
   ),
+  FRONTEND_URL: Joi.string().uri().required().description("Frontend URL"),
 }).unknown();
 
 // Validate and extract environment variables
@@ -111,6 +113,7 @@ const config = {
     },
     from: envVars.EMAIL_FROM,
   },
+  frontendUrl: envVars.FRONTEND_URL,
 };
 
 // Export the configuration object
