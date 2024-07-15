@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.commonKnex = exports.config = void 0;
 const knex_1 = require("knex");
 const config_1 = __importDefault(require("./config"));
+const path_1 = __importDefault(require("path"));
+const isProduction = process.env.NODE_ENV === "production";
 const config = {
     common: {
         client: config_1.default.postgres.client,
@@ -20,7 +22,7 @@ const config = {
             max: 10,
         },
         migrations: {
-            directory: "../migrations/common",
+            directory: path_1.default.join(__dirname, isProduction ? "../../dist/migrations/common" : "../migrations/common"),
         },
     },
     tenant: {

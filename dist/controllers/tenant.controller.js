@@ -10,21 +10,7 @@ const generate_password_1 = __importDefault(require("generate-password"));
 const database_1 = require("../config/database");
 const services_1 = require("../services");
 const knex_1 = __importDefault(require("knex"));
-// const createTenant = catchAsync(async (req: Request, res: Response) => {
-//   const { organization } = req.body;
-//   const tenantName = slugify(organization.toLowerCase(), "_");
-//   const password = generator.generate({ length: 12, numbers: true });
-//   const uuid = uuidv4();
-//   const tenant = {
-//     uuid,
-//     db_name: tenantName,
-//     db_username: tenantName,
-//     db_password: password,
-//   };
-//   await db("tenants").insert(tenant);
-//   await tenantService.up({ tenantName, password, uuid });
-//   res.status(httpStatus.OK).send({ tenant: { ...tenant } });
-// });
+const config_1 = __importDefault(require("../config/config"));
 const createTenant = (0, catchAsync_1.default)(async (req, res) => {
     const { organization } = req.body;
     const tenantID = (0, uuid_1.v4)();
@@ -32,22 +18,24 @@ const createTenant = (0, catchAsync_1.default)(async (req, res) => {
     const password = generate_password_1.default.generate({ length: 12, numbers: true });
     const databaseName = `tenant_db_${organization.toLowerCase()}`;
     const dbConnection = {
-        host: process.env.DB_HOST || "localhost",
+        host: config_1.default.postgres.connection.host,
         user: username,
         password,
         database: databaseName,
     };
+    // Run all migrations related to commonKnex first
+    await database_1.commonKnex.migrate.latest();
     // Step 1: Create the tenant's database
     await database_1.commonKnex.raw(`CREATE DATABASE "${dbConnection.database}"`);
     // Step 2: Create the user for the tenant
     await database_1.commonKnex.raw(`CREATE USER "${dbConnection.user}" WITH ENCRYPTED PASSWORD '${dbConnection.password}'`);
     // Connect to the tenant's database as a superuser
     const superTenantKnex = (0, knex_1.default)({
-        client: "pg",
+        client: config_1.default.postgres.client,
         connection: {
             host: dbConnection.host,
-            user: process.env.DB_SUPERUSER || "postgres",
-            password: "admin",
+            user: config_1.default.postgres.connection.user,
+            password: config_1.default.postgres.connection.password,
             database: dbConnection.database,
         },
     });
@@ -84,7 +72,7 @@ const createTenant = (0, catchAsync_1.default)(async (req, res) => {
     await tenantKnex.migrate.latest();
     res
         .status(http_status_1.default.CREATED)
-        .json({ message: "Tenant created successfully", dbConnection, tenantID });
+        .json({ message: "Tenant created successfully", tenantID });
 });
 // const deleteTenant = catchAsync(async (req: Request, res: Response) => {
 //   const { tenantName } = req.params;
