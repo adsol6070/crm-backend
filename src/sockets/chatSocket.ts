@@ -819,14 +819,10 @@ export const setupChatSocket = (
 
           const groupChatHistory = await groupChatHistoryQuery;
 
-          console.log("GroupChatHistory:", groupChatHistory);
-
           const personalNotifications = await socket.data
             .connection("personal_notifications")
             .where({ user_id: socket.data.user.id, group_id: groupId })
             .orderBy("created_at", "asc");
-
-          console.log("PersonalNotifications:", personalNotifications);
 
           const filteredGroupChatHistory = groupChatHistory.filter(
             (msg: any) => {
@@ -857,8 +853,6 @@ export const setupChatSocket = (
             const dateB = new Date(b.timestamp).getTime();
             return dateA - dateB;
           });
-
-          console.log("CombinedHistory:", combinedHistory);
 
           const userIds = combinedHistory.map((msg: any) => msg.from_user_id);
 
