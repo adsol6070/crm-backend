@@ -64,6 +64,7 @@ interface Document {
 }
 
 const createLead = catchAsync(async (req: Request, res: Response) => {
+  console.log("create lead body", req.body.tenantID)
   const connection = await connectionService.getCurrentTenantKnex();
   const lead = await leadService.createLead(connection, req.body);
   const message = "Lead created successfully.";

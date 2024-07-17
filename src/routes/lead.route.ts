@@ -26,6 +26,13 @@ router
 
 // Lead Routes
 router
+  .route("/createLead")
+  .post(
+    connectionRequest,
+    leadController.createLead,
+  )
+
+router
   .route("/")
   .get(
     auth("Leads", LeadPermissions.VIEW),

@@ -127,7 +127,7 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   // }
   const { ...leadData } = lead;
   const passportExpiry = leadData.passportExpiry === '' ? null : leadData.passportExpiry;
-
+  const userID = leadData.userID === 'By QR Code' ? null : leadData.userID;
   const leadHistoryEntry = {
     action: "Created",
     timestamp: new Date().toISOString(),
@@ -137,6 +137,7 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   const correctedData = {
     ...leadData,
     id: uuidv4(),
+    userID,
     visaCategory: String(leadData.visaCategory).toLowerCase(),
     passportExpiry: passportExpiry,
     leadHistory: JSON.stringify([leadHistoryEntry]),
@@ -314,11 +315,9 @@ const updateLeadStatus = async (
     }
   }
 
-  // Capture previous and upcoming status
   const previousStatus = lead.leadStatus;
   const upcomingStatus = updateBody.leadStatus;
 
-  // Add history entry
   leadHistory.push({
     action: 'Status Updated',
     timestamp: new Date().toISOString(),
@@ -329,14 +328,12 @@ const updateLeadStatus = async (
     }
   });
 
-  // Create updated data object
   const { ...updatedData } = updateBody;
   const updatedDataWithoutID = {
     ...updatedData,
     leadHistory: JSON.stringify(leadHistory)
   };
 
-  // Update the lead in the database
   const updatedLead = await connection("leads")
     .where({ id: leadId })
     .update(updatedDataWithoutID)
@@ -422,6 +419,7 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string, use
   const leadsWithIdsAndHistory = leads.map(lead => {
     const { ...restOfLead } = lead;
     const passportExpiry = restOfLead.passportExpiry === '' ? null : restOfLead.passportExpiry;
+    const userID = restOfLead.userID === '' ? null : restOfLead.userID;
     const leadHistoryEntry = {
       action: "Created",
       timestamp: new Date().toISOString(),
