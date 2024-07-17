@@ -11,7 +11,7 @@ const router = express.Router();
 // Visa Category Routes
 router
   .route("/getVisaCategory")
-  .get(connectionRequest, leadController.getVisaCategory)
+  .post(connectionRequest, leadController.getVisaCategory)
 
 router
   .route("/visaCategory")
