@@ -13,4 +13,9 @@ router
     .route("/getCreatedLeadsBasedOnTime")
     .get(auth("Reports"), connectionRequest, reportsController.getCreatedLeadsBasedOnTime);
 
+router
+    .route("/getCreatedLeadsBasedOnSource")
+    .get(auth("Reports"), connectionRequest, reportsController.getCreatedLeadsBasedOnSource);
+
+
 export default router;
