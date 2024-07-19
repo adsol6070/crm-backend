@@ -7,6 +7,7 @@ import leadRoute from "./lead.route";
 import permissionsRoute from "./permissions.route";
 import chatRoute from "./chat.route";
 import scoreRoute from "./score.route"
+import reportRoute from "./reports.route"
 
 const router = express.Router();
 const defaultRoutes = [
@@ -42,6 +43,10 @@ const defaultRoutes = [
   {
     path: "/chat",
     route: chatRoute,
+  },
+  {
+    path: "/reports",
+    route: reportRoute,
   },
 ];
 
