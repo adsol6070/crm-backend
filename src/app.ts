@@ -30,10 +30,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
+const allowOrigins = config.frontendUrls;
+
 const corsOptions = {
-  origin: `${config.frontendUrl}`,
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ) => {
+    if (!origin || allowOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new ApiError(httpStatus.FORBIDDEN, "Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
+
 app.use(cors(corsOptions));
 
 app.use(passport.initialize());

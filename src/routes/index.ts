@@ -20,7 +20,7 @@ const defaultRoutes = [
     route: userRoute,
   },
   {
-    path: "/tenant",
+    path: "/organization",
     route: tenantRoute,
   },
   {
