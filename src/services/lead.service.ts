@@ -139,6 +139,7 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
     id: uuidv4(),
     userID,
     visaCategory: String(leadData.visaCategory).toLowerCase(),
+    leadSource: String(leadData.leadSource).toLowerCase(),
     passportExpiry: passportExpiry,
     leadHistory: JSON.stringify([leadHistoryEntry]),
   };
