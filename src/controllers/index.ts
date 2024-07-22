@@ -6,3 +6,4 @@ export { default as permissionsController } from "./permissions.controller";
 export { default as leadController } from "./lead.controller";
 export { default as scoreController } from "./score.controller";
 export { default as chatController } from "./chat.controller";
+export { default as reportsController } from "./reports.controller";
