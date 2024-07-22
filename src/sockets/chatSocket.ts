@@ -19,7 +19,7 @@ export const setupChatSocket = (
 ) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: `${config.frontendUrl}`,
+      origin: config.frontendUrls[0],
       methods: ["GET", "POST"],
     },
   });

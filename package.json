@@ -16,7 +16,9 @@
     "migrate:make:tenant": "knex --knexfile src/config/knexfile.ts --env tenant migrate:make",
     "migrateTenants": "ts-node src/config/migrateTenants.ts",
     "migrateTenants:up": "ts-node src/config/migrateTenants.ts up",
-    "migrateTenants:down": "ts-node src/config/migrateTenants.ts down"
+    "migrateTenants:down": "ts-node src/config/migrateTenants.ts down",
+    "migrate:custom:apply": "ts-node src/scripts/applyMigration.ts",
+    "migrate:custom:rollback": "ts-node src/scripts/rollbackMigration.ts"
   },
   "keywords": [],
   "author": "Adsolforweb",

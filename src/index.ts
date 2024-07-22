@@ -1,9 +1,9 @@
 import { app } from "./app";
 import logger from "./config/logger";
 import config from "./config/config";
-import { connectionService } from "./services";
 import { createServer } from "http";
 import { setupChatSocket } from "./sockets/chatSocket";
+import { createCommonDatabase } from "./scripts/createCommonDatabase";
 
 // Define server and custom socket interface
 let server: any;
@@ -11,7 +11,7 @@ let io: any;
 
 const startServer = async () => {
   try {
-    await connectionService.createCommonDatabase();
+    await createCommonDatabase();
     logger.info("Connected Successfully");
 
     const httpServer = createServer(app);

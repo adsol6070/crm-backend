@@ -80,6 +80,7 @@ const connectionRequest = async (
     }
     connectionService.runWithTenantContext(tenant, () => next());
   } catch (error) {
+    console.log("Error:", error)
     next(
       new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,
