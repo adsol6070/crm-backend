@@ -487,23 +487,8 @@ export const setupChatSocket = (
       }
     });
 
-    /* 
-    
-
-    Use Case 1. The sender Forward the Message to their own
-       e.g. toUserIds ["senderId"]
-       ToUsersIds: [ '14e9bef1-26b0-415e-a5ac-02f47bafa502' ]
-    Use Case 2. The sender Forward the Message to other person including own 
-       e.g. toUserIds ["senderId", "other1"]
-       ToUsersIds: ['14e9bef1-26b0-415e-a5ac-02f47bafa502', '29a6df70-a6d2-49f8-a84b-9e9ee3024eca']
-    Use Case 3. The sender Forward the Message to other person excluding own 
-       e.g. toUserIds ["other1", "other2"]
-
-    */
-
     socket.on("forwardMessage", async ({ toUserIds, messageId, isGroup }) => {
       try {
-        // console.log("ToUsersIds:", toUserIds);
         if (socket.data.user && socket.data.connection) {
           let message;
 
@@ -512,53 +497,57 @@ export const setupChatSocket = (
               .connection("group_messages")
               .where({ id: messageId })
               .first();
-            console.log("GroupMessage part called:", message);
           } else {
             message = await socket.data
               .connection("messages")
               .where({ id: messageId })
               .first();
-            console.log("Message part called:", message);
           }
 
           if (message) {
-            let newFileName = null;
+            const tenantID = socket.data.user.tenantID;
+            const originalFilePath = message.file_url
+              ? path.join(
+                  __dirname,
+                  "..",
+                  "uploads",
+                  tenantID,
+                  "ChatMessageFiles",
+                  message.file_url,
+                )
+              : null;
 
-            if (message.file_url && message.file_type && message.file_name) {
-              const tenantID = socket.data.user.tenantID;
-              const originalFilePath = path.join(
-                __dirname,
-                "..",
-                "uploads",
-                tenantID,
-                "ChatMessageFiles",
-                message.file_url,
-              );
+            const newMessages = await Promise.all(
+              toUserIds.map((toUserId: string) => {
+                let newFileName = null;
 
-              const timestamp = Date.now();
-              newFileName = `chatFile-${timestamp}-${message.file_name}`;
-              const newFilePath = path.join(
-                __dirname,
-                "..",
-                "uploads",
-                tenantID,
-                "ChatMessageFiles",
-                newFileName,
-              );
+                if (originalFilePath) {
+                  const timestamp = Date.now();
+                  newFileName = `chatFile-${timestamp}-${toUserId}-${message.file_name}`;
+                  const newFilePath = path.join(
+                    __dirname,
+                    "..",
+                    "uploads",
+                    tenantID,
+                    "ChatMessageFiles",
+                    newFileName,
+                  );
 
-              fs.copyFileSync(originalFilePath, newFilePath);
-            }
+                  fs.copyFileSync(originalFilePath, newFilePath);
+                }
 
-            const newMessages = toUserIds.map((toUserId: string) => ({
-              id: uuidv4(),
-              fromUserId: socket.data.user.id,
-              toUserId,
-              message: message.message,
-              file_url: newFileName ? newFileName : message.file_url,
-              file_type: message.file_type,
-              file_name: message.file_name,
-              timestamp: new Date(),
-            }));
+                return {
+                  id: uuidv4(),
+                  fromUserId: socket.data.user.id,
+                  toUserId,
+                  message: message.message,
+                  file_url: newFileName ? newFileName : message.file_url,
+                  file_type: message.file_type,
+                  file_name: message.file_name,
+                  timestamp: new Date(),
+                };
+              }),
+            );
 
             await socket.data.connection("messages").insert(newMessages);
 
@@ -1400,18 +1389,49 @@ export const setupChatSocket = (
     socket.on("deleteGroupMessageForMe", async ({ messageId, groupId }) => {
       try {
         if (socket.data.user && socket.data.connection) {
-          const message = await socket.data
-            .connection("group_messages")
-            .where({ id: messageId, group_id: groupId })
-            .first();
-          if (message) {
-            await socket.data.connection("user_group_messages").insert({
-              user_id: socket.data.user.id,
-              group_message_id: messageId,
-            });
+          const userId = socket.data.user.id;
 
-            socket.emit("groupMessageDeletedForMe", { messageId });
+          await socket.data.connection("user_group_messages").insert({
+            user_id: userId,
+            group_message_id: messageId,
+          });
+
+          const remainingUsers = await socket.data
+            .connection("group_users")
+            .leftJoin(
+              "user_group_messages",
+              "group_users.user_id",
+              "user_group_messages.user_id",
+            )
+            .where({
+              "group_users.group_id": groupId,
+              "group_users.is_active": true,
+            })
+            .whereNull("user_group_messages.group_message_id")
+            .select("user_group_messages.user_id");
+
+          if (remainingUsers.length === 0) {
+            const message = await socket.data
+              .connection("group_messages")
+              .where({ id: messageId, group_id: groupId })
+              .first();
+
+            if (message) {
+              if (message.file_url) {
+                await chatService.deleteChatFile(
+                  socket.data.user.tenantID,
+                  message.file_url,
+                );
+              }
+
+              await socket.data
+                .connection("group_messages")
+                .where({ id: messageId, group_id: groupId })
+                .del();
+            }
           }
+
+          socket.emit("groupMessageDeletedForMe", { messageId });
         }
       } catch (error) {
         handleError(error, "Error deleting group message for user");
