@@ -17,17 +17,21 @@ const getCreatedLeadsBasedOnTime = catchAsync(async (req: Request, res: Response
   const { startDate, endDate } = req.query;
 
   if (!startDate || !endDate) {
-    res.status(httpStatus.BAD_REQUEST).send("Not Available");
+    return res.status(httpStatus.BAD_REQUEST).send("Not Available");
   }
+
+  // Convert input dates to UTC
+  const start = new Date(startDate as string).toISOString();
+  const end = new Date(endDate as string).toISOString();
 
   const connection = await connectionService.getCurrentTenantKnex();
-  const leadReportsOnMonth = await reportService.getCreatedLeadsBasedOnTime(connection, new Date(startDate as string), new Date(endDate as string));
-
-  if (!leadReportsOnMonth || leadReportsOnMonth.length === 0) {
-    res.status(httpStatus.BAD_REQUEST).send("Not Available");
+  const leadReportsOnTime = await reportService.getCreatedLeadsBasedOnTime(connection, start, end);
+  
+  if (!leadReportsOnTime || leadReportsOnTime.length === 0) {
+    return res.status(httpStatus.BAD_REQUEST).send("Not Available");
   }
 
-  res.status(httpStatus.OK).send(leadReportsOnMonth);
+  return res.status(httpStatus.OK).send(leadReportsOnTime);
 });
 
 const getCreatedLeadsBasedOnSource = catchAsync(async (req: Request, res: Response) => {

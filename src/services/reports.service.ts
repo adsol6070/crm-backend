@@ -13,12 +13,18 @@ const getLeadsBasedonStatus = async (connection: Knex): Promise<any> => {
   return await cteQuery;
 };
 
-const getCreatedLeadsBasedOnTime = async (connection: any, startDate: Date, endDate: Date) => {
-  return connection('leads')
-      .whereBetween('created_at', [startDate, endDate])
-      .select(connection.raw('DATE(created_at) as date'), connection.raw('COUNT(*) as lead_count'))
-      .groupBy('date')
-      .orderBy('date');
+const getCreatedLeadsBasedOnTime = async (connection: any, startDate: any, endDate: any) => {
+
+  const leadReportsOnTime = await connection('leads')
+    .whereBetween('created_at', [startDate, endDate])
+    .select(
+      connection.raw(`created_at AT TIME ZONE 'UTC' AS date`), 
+      connection.raw('COUNT(*) as lead_count')
+    )
+    .groupBy('date')
+    .orderBy('date');
+
+  return leadReportsOnTime;
 };
 
 const getCreatedLeadsBasedOnSource = async (connection: Knex): Promise<any> => {
