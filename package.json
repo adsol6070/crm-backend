@@ -9,7 +9,7 @@
   "scripts": {
     "build": "npm install && tsc",
     "dev": "cross-env NODE_ENV=development nodemon",
-    "start": "cross-env NODE_ENV=production npm run migrateTenants && npm run seedTenants && node dist",
+    "start": "cross-env NODE_ENV=production node dist",
     "migrate:make:common": "knex --knexfile src/config/knexfile.ts --env common migrate:make",
     "migrate:latest:common": "knex --knexfile src/config/knexfile.ts --env common migrate:latest",
     "migrate:rollback:common": "knex --knexfile src/config/knexfile.ts --env common migrate:rollback",
