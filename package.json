@@ -18,7 +18,12 @@
     "migrateTenants:up": "ts-node src/config/migrateTenants.ts up",
     "migrateTenants:down": "ts-node src/config/migrateTenants.ts down",
     "migrate:custom:apply": "ts-node src/scripts/applyMigration.ts",
-    "migrate:custom:rollback": "ts-node src/scripts/rollbackMigration.ts"
+    "migrate:custom:rollback": "ts-node src/scripts/rollbackMigration.ts",
+    "seed:make:common": "knex --knexfile src/config/knexfile.ts --env common seed:make",
+    "seed:run:common": "knex --knexfile src/config/knexfile.ts --env common seed:run",
+    "seed:make:tenant": "knex --knexfile src/config/knexfile.ts --env tenant seed:make",
+    "seed:run:tenant": "knex --knexfile src/config/knexfile.ts --env tenant seed:run",
+    "seedTenants": "ts-node src/config/seedTenants.ts"
   },
   "keywords": [],
   "author": "Adsolforweb",

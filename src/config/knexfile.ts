@@ -17,6 +17,9 @@ interface DatabaseConfig {
   migrations: {
     directory: string;
   };
+  seeds: {
+    directory: string;
+  };
 }
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -40,6 +43,12 @@ const config: Record<"common" | "tenant", DatabaseConfig> = {
         isProduction ? "../../dist/migrations/common" : "../migrations/common",
       ),
     },
+    seeds: {
+      directory: path.join(
+        __dirname,
+        isProduction ? "../../dist/seeds/common" : "../seeds/common",
+      ),
+    }
   },
 
   tenant: {
@@ -60,6 +69,12 @@ const config: Record<"common" | "tenant", DatabaseConfig> = {
         isProduction ? "../../dist/migrations/tenant" : "../migrations/tenant",
       ),
     },
+    seeds: {
+      directory: path.join(
+        __dirname,
+        isProduction ? "../../dist/seeds/tenant" : "../seeds/tenant",
+      ),
+    }
   },
 };
 
