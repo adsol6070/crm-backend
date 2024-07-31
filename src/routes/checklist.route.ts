@@ -32,7 +32,6 @@ router
         checklistController.deleteChecklistsById
     )
 
-
 router
     .route("/:visaType")
     .get(
