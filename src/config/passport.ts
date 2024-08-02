@@ -6,7 +6,7 @@ import {
 import config from "./config";
 import { tokenTypes } from "./tokens";
 import { connectionService } from "../services";
-import { commonKnex } from "./database";
+import { commonKnex } from "./database"; 
 
 interface JwtPayload {
   sub: string;
@@ -15,6 +15,7 @@ interface JwtPayload {
   exp: number;
   type: string;
 }
+
 
 const jwtVerify = async (payload: JwtPayload, done: VerifiedCallback) => {
   try {

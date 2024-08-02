@@ -40,29 +40,18 @@ const logout = async (connection: Knex, refreshToken: string) => {
 };
 
 const refreshAuth = async (connection: Knex, refreshToken: string) => {
-  try {
-    const refreshTokenDoc = await tokenService.verifyToken(
-      connection,
-      refreshToken,
-      tokenTypes.REFRESH,
-    );
+  const refreshTokenDoc = await tokenService.verifyToken(
+    connection,
+    refreshToken,
+    tokenTypes.REFRESH,
+  );
 
-    const user = await userService.getUserByID(
-      connection,
-      refreshTokenDoc.user,
-    );
-    if (!user) {
-      throw new Error();
-    }
-
-    await connection("tokens")
-      .where({ token: refreshToken, type: tokenTypes.REFRESH })
-      .del();
-    return tokenService.generateAuthTokens(user, connection);
-  } catch (error) {
-    console.log("ERROR:", error)
-    throw new ApiError(httpStatus.UNAUTHORIZED, "2 Please authenticate");
+  const user = await userService.getUserByID(connection, refreshTokenDoc.user);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
+
+  return tokenService.generateAuthTokens(user, connection);
 };
 
 const resetPassword = async (

@@ -8,6 +8,8 @@ import {
   userService,
 } from "../services";
 import { Request, Response } from "express";
+import ApiError from "../utils/ApiError";
+import { tokenTypes } from "../config/tokens";
 
 const register = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
@@ -30,16 +32,34 @@ const login = catchAsync(async (req: Request, res: Response) => {
 
 const logout = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  await authService.logout(connection, req.body.refreshToken);
+
+  console.log("Request Body:", req.body);
+
+  const { tenantID, user } = req.body;
+  await connection("tokens")
+    .where({
+      user,
+      tenantID,
+      type: tokenTypes.REFRESH,
+    })
+    .del();
+
   res.status(httpStatus.NO_CONTENT).send();
 });
 
 const refreshTokens = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  const tokens = await authService.refreshAuth(
-    connection,
-    req.body.refresh_token,
-  );
+  const { tenantID, userID } = req.body;
+
+  const refreshToken = await connection("tokens")
+    .where({ user: userID, tenantID })
+    .first();
+
+  if (!refreshToken) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Refresh token not found");
+  }
+
+  const tokens = await authService.refreshAuth(connection, refreshToken.token);
   res.send({ ...tokens });
 });
 

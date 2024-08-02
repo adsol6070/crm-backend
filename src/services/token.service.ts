@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { tokenTypes } from "../config/tokens";
 import config from "../config/config";
 import { Knex } from "knex";
@@ -66,15 +66,25 @@ const saveToken = async (
 };
 
 const verifyToken = async (connection: Knex, token: string, type: string) => {
-  const payload = jwt.verify(token, config.jwt.secret);
-  const tokenDoc = await connection("tokens")
-    .select("*")
-    .where({ token, type, user: payload.sub, blacklisted: false })
-    .first();
-  if (!tokenDoc) {
-    throw new Error("Token not found");
+  try {
+    const payload = jwt.verify(token, config.jwt.secret) as JwtPayload;
+
+    const tokenDoc = await connection("tokens")
+      .select("*")
+      .where({ token, type, user: payload.sub, blacklisted: false })
+      .first();
+
+    if (!tokenDoc) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Token not found");
+    }
+
+    return tokenDoc;
+  } catch (error: any) {
+    if (error?.name === "TokenExpiredError") {
+      await connection("tokens").where({ token, type }).del();
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Refresh Token expired");
+    }
   }
-  return tokenDoc;
 };
 
 const generateAuthTokens = async (user: User, connection: Knex) => {
@@ -86,27 +96,38 @@ const generateAuthTokens = async (user: User, connection: Knex) => {
     tokenTypes.ACCESS,
     config.jwt.secret,
   );
-  const refreshToken = await generateToken(
-    user.id,
-    user.tenantID,
-    user.role,
-    config.jwt.refreshExpirationTime,
-    tokenTypes.REFRESH,
-    config.jwt.secret,
-  );
 
-  await saveToken(
-    connection,
-    refreshToken,
-    user.id,
-    user.tenantID,
-    config.jwt.refreshExpirationTime,
-    tokenTypes.REFRESH,
-  );
-  return {
-    accessToken,
-    refreshToken,
-  };
+  const existingRefreshToken = await connection("tokens").where({
+    user: user.id,
+    type: tokenTypes.REFRESH,
+  });
+
+  if (existingRefreshToken.length === 0) {
+    const refreshToken = await generateToken(
+      user.id,
+      user.tenantID,
+      user.role,
+      config.jwt.refreshExpirationTime,
+      tokenTypes.REFRESH,
+      config.jwt.secret,
+    );
+
+    await saveToken(
+      connection,
+      refreshToken,
+      user.id,
+      user.tenantID,
+      config.jwt.refreshExpirationTime,
+      tokenTypes.REFRESH,
+    );
+    return {
+      accessToken,
+    };
+  } else {
+    return {
+      accessToken,
+    };
+  }
 };
 
 const generateResetPasswordToken = async (connection: Knex, email: string) => {
