@@ -114,7 +114,7 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
         name: organization,
         db_connection: dbConnection,
       });
-
+      
       await tenantKnex.migrate.latest();
       await tenantKnex.seed.run();
 

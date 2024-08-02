@@ -28,7 +28,7 @@ const seedTenant = async (tenant: Tenant): Promise<void> => {
       database: tenant.db_connection.database,
     },
     seeds: {
-      directory: './src/seeds/tenant',
+      directory: path.resolve(__dirname, '../seeds/tenant'),
     },
   });
 
