@@ -143,15 +143,72 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
   }
 });
 
-const disableTenant = async (req: Request, res: Response) => {
-  const { tenantID } = req.body;
+// const disableTenant = async (req: Request, res: Response) => {
+//   const { tenantID } = req.params;
 
-  console.table({ TenantID: tenantID });
+//   console.table({ TenantID: tenantID });
+
+//   if (!tenantID) {
+//     return res
+//       .status(httpStatus.BAD_REQUEST)
+//       .json({ message: "Tenant ID is required" });
+//   }
+
+//   const trx = await commonKnex.transaction();
+
+//   try {
+//     const tenant = await trx("tenants").where({ tenantID }).first();
+
+//     if (!tenant) {
+//       await trx.rollback();
+//       return res
+//         .status(httpStatus.NOT_FOUND)
+//         .json({ message: "Tenant not found" });
+//     }
+
+//     const dbConnection = tenant.db_connection;
+
+//     await trx.raw(
+//       `REVOKE CONNECT ON DATABASE "${dbConnection.database}" FROM "${dbConnection.user}"`,
+//     );
+//     await trx.raw(`ALTER USER "${dbConnection.user}" WITH NOLOGIN`);
+
+//     await trx("tenants").where({ tenantID }).update({
+//       active: false,
+//       deactivated_at: new Date(),
+//     });
+
+//     await trx.commit();
+
+//     logger.info(
+//       `Tenant ${tenant.name} (ID: ${tenantID}) disabled successfully`,
+//     );
+//     res.status(httpStatus.OK).json({ message: "Tenant disabled successfully" });
+//   } catch (error: any) {
+//     await trx.rollback();
+//     logger.error(`Failed to disable tenant: ${error.message}`);
+//     res
+//       .status(httpStatus.INTERNAL_SERVER_ERROR)
+//       .json({ message: "Failed to disable tenant", error: error.message });
+//   }
+// };
+
+const toggleTenant = async (req: Request, res: Response) => {
+  console.log(req.body)
+  const { tenantID, active } = req.body;
+
+  console.table({ TenantID: tenantID, Active: active });
 
   if (!tenantID) {
     return res
       .status(httpStatus.BAD_REQUEST)
       .json({ message: "Tenant ID is required" });
+  }
+
+  if (active === undefined) {
+    return res
+      .status(httpStatus.BAD_REQUEST)
+      .json({ message: "Active status is required" });
   }
 
   const trx = await commonKnex.transaction();
@@ -168,28 +225,45 @@ const disableTenant = async (req: Request, res: Response) => {
 
     const dbConnection = tenant.db_connection;
 
-    await trx.raw(
-      `REVOKE CONNECT ON DATABASE "${dbConnection.database}" FROM "${dbConnection.user}"`,
-    );
-    await trx.raw(`ALTER USER "${dbConnection.user}" WITH NOLOGIN`);
+    if (active) {
+      // Enable tenant
+      await trx.raw(
+        `GRANT CONNECT ON DATABASE "${dbConnection.database}" TO "${dbConnection.user}"`
+      );
+      await trx.raw(`ALTER USER "${dbConnection.user}" WITH LOGIN`);
 
-    await trx("tenants").where({ tenantID }).update({
-      active: false,
-      deactivated_at: new Date(),
-    });
+      await trx("tenants").where({ tenantID }).update({
+        active: true,
+        deactivated_at: null, // Clear deactivated_at if reactivating
+      });
+      
+      logger.info(`Tenant ${tenant.name} (ID: ${tenantID}) enabled successfully`);
+      res.status(httpStatus.OK).json({ message: "Tenant enabled successfully" });
+
+    } else {
+      // Disable tenant
+      await trx.raw(
+        `REVOKE CONNECT ON DATABASE "${dbConnection.database}" FROM "${dbConnection.user}"`
+      );
+      await trx.raw(`ALTER USER "${dbConnection.user}" WITH NOLOGIN`);
+
+      await trx("tenants").where({ tenantID }).update({
+        active: false,
+        deactivated_at: new Date(),
+      });
+
+      logger.info(`Tenant ${tenant.name} (ID: ${tenantID}) disabled successfully`);
+      res.status(httpStatus.OK).json({ message: "Tenant disabled successfully" });
+    }
 
     await trx.commit();
 
-    logger.info(
-      `Tenant ${tenant.name} (ID: ${tenantID}) disabled successfully`,
-    );
-    res.status(httpStatus.OK).json({ message: "Tenant disabled successfully" });
   } catch (error: any) {
     await trx.rollback();
-    logger.error(`Failed to disable tenant: ${error.message}`);
+    logger.error(`Failed to toggle tenant status: ${error.message}`);
     res
       .status(httpStatus.INTERNAL_SERVER_ERROR)
-      .json({ message: "Failed to disable tenant", error: error.message });
+      .json({ message: "Failed to toggle tenant status", error: error.message });
   }
 };
 
@@ -206,6 +280,7 @@ const getTenants = async (req: Request, res: Response) => {
       dbpassword: tenant.db_connection.password,
       active: tenant.active,
       created_at: tenant.created_at,
+      deactivated_at: tenant.deactivated_at,
     }));
     res.status(httpStatus.OK).json(formattedTenants);
   } catch (error: any) {
@@ -269,7 +344,8 @@ const getSuperusers = async (req: Request, res: Response) => {
 
 export default {
   createTenant,
-  disableTenant,
+  // disableTenant,
+  toggleTenant,
   getTenants,
   getSuperusers /* deleteTenant, editTenant */,
 };

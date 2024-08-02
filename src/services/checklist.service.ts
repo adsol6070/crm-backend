@@ -38,9 +38,9 @@ const deleteChecklistById = async (
 
 const getChecklistsByVisaType = async (connection: Knex, visaType: string): Promise<Data[]> => {
     const checklist = await connection("visa_checklists").where({ visaType: visaType }).first();
-    if (!checklist) {
-        throw new ApiError(httpStatus.NOT_FOUND, "Checklist not found");
-    }
+    // if (!checklist) {
+    //     throw new ApiError(httpStatus.NOT_FOUND, "Checklist not found");
+    // }
     return checklist;
 };
 
