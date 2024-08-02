@@ -41,6 +41,12 @@ const getTenantKnex = (tenant: Tenant): Knex => {
               : "../migrations/tenant",
           ),
         },
+        seeds: {
+          directory: path.join(
+            __dirname,
+            isProduction ? "../../dist/seeds/tenant" : "../seeds/tenant",
+          ),
+        },
         pool: { min: 2, max: 10 },
         acquireConnectionTimeout: 10000,
       });

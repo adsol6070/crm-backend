@@ -1,6 +1,7 @@
 import { knex } from "knex";
 import { config, commonKnex } from "./database";
 import logger from "./logger";
+import path from "path";
 
 interface Tenant {
   tenantID: string;
@@ -12,6 +13,8 @@ interface Tenant {
     database: string;
   };
 }
+
+const isProduction = process.env.NODE_ENV === "production";
 
 const migrateTenant = async (
   tenant: Tenant,
@@ -27,7 +30,10 @@ const migrateTenant = async (
       database: tenant.db_connection.database,
     },
     migrations: {
-      directory: "./src/migrations/tenant",
+      directory: path.join(
+        __dirname,
+        isProduction ? "../../dist/migrations/tenant" : "../migrations/tenant",
+      ),
     },
   });
 
@@ -35,16 +41,51 @@ const migrateTenant = async (
     logger.info(`Migrating tenant (${direction}): ${tenant.name}`);
     if (direction === "down") {
       if (specificMigration) {
-        await tenantKnex.migrate.down({ name: specificMigration });
+        const [completedMigrations, pendingMigrations] =
+          await tenantKnex.migrate.list();
+
+        const migrationToRollback = completedMigrations.find(
+          (mig: any) => mig.name === specificMigration,
+        );
+
+        if (migrationToRollback) {
+          await tenantKnex.migrate.down({ name: specificMigration });
+          logger.info(
+            `Migration ${specificMigration} rolled back successfully for ${tenant.name}.`,
+          );
+        } else {
+          logger.info(
+            `Migration ${specificMigration} has not been applied or already rolled back for ${tenant.name}.`,
+          );
+        }
       } else {
         await tenantKnex.migrate.rollback();
       }
     } else {
-      await tenantKnex.migrate.latest();
+      if (specificMigration) {
+        const [completedMigrations, pendingMigrations] =
+          await tenantKnex.migrate.list();
+
+        const migrationToApply = pendingMigrations.find(
+          (mig: any) => mig.file === specificMigration,
+        );
+
+        if (migrationToApply) {
+          await tenantKnex.migrate.up({ name: specificMigration });
+          logger.info(
+            `Migration ${specificMigration} applied successfully for ${tenant.name}.`,
+          );
+        } else {
+          logger.info(
+            `Migration ${specificMigration} is not pending or already applied for ${tenant.name}.`,
+          );
+        }
+      } else {
+        await tenantKnex.migrate.latest();
+      }
     }
-    logger.info(`Migration completed for ${tenant.name}`);
   } catch (error) {
-    console.error(
+    logger.error(
       `Failed to migrate ${tenant.name}: ${(error as Error).message}`,
     );
   } finally {

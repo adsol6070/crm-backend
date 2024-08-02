@@ -10,33 +10,37 @@ const getLeadsBasedonStatus = catchAsync(async (req: Request, res: Response) => 
   if (!leadReportsOnStatus || leadReportsOnStatus.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "Leads not found");
   }
-  res.send(leadReportsOnStatus);
+  res.status(httpStatus.OK).send(leadReportsOnStatus);
 });
 
 const getCreatedLeadsBasedOnTime = catchAsync(async (req: Request, res: Response) => {
   const { startDate, endDate } = req.query;
 
   if (!startDate || !endDate) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Start date and end date are required');
+    return res.status(httpStatus.BAD_REQUEST).send("Not Available");
   }
+
+  // Convert input dates to UTC
+  const start = new Date(startDate as string).toISOString();
+  const end = new Date(endDate as string).toISOString();
 
   const connection = await connectionService.getCurrentTenantKnex();
-  const leadReportsOnMonth = await reportService.getCreatedLeadsBasedOnTime(connection, new Date(startDate as string), new Date(endDate as string));
-
-  if (!leadReportsOnMonth || leadReportsOnMonth.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Leads not found');
+  const leadReportsOnTime = await reportService.getCreatedLeadsBasedOnTime(connection, start, end);
+  
+  if (!leadReportsOnTime || leadReportsOnTime.length === 0) {
+    return res.status(httpStatus.BAD_REQUEST).send("Not Available");
   }
 
-  res.send(leadReportsOnMonth);
+  return res.status(httpStatus.OK).send(leadReportsOnTime);
 });
 
 const getCreatedLeadsBasedOnSource = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const leadReportsOnSource = await reportService.getCreatedLeadsBasedOnSource(connection);
   if (!leadReportsOnSource || leadReportsOnSource.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Leads not found");
+    res.status(httpStatus.BAD_REQUEST).send("Not Available");
   }
-  res.send(leadReportsOnSource);
+  res.status(httpStatus.OK).send(leadReportsOnSource);
 });
 
 export default {

@@ -11,3 +11,4 @@ export { default as leadService } from "./lead.service";
 export { default as scoreService } from "./score.service";
 export { default as chatService } from "./chat.service";
 export { default as reportService } from "./reports.service";
+export { default as checklistService } from "./checklist.service";

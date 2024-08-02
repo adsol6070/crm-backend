@@ -115,7 +115,10 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
         db_connection: dbConnection,
       });
 
+      process.env.TENANT_ID = tenantID;
+
       await tenantKnex.migrate.latest();
+      await tenantKnex.seed.run();
 
       logger.info(
         `Tenant ${organization} created successfully with ID: ${tenantID}`,
