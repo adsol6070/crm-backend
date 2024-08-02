@@ -56,6 +56,7 @@ const findTenant = async (
         "tenants.active",
       )
       .first();
+
     return tenant || null;
   }
   return null;

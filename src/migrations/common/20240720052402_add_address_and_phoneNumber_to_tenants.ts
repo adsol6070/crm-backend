@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
       table.string("subscriptionPlan");
       table.string("address");
       table.string("phoneNumber");
-      table.date("deactivated_at");
+      table.timestamp("deactivated_at");
     });
 }
 
