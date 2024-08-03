@@ -69,7 +69,8 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
         client: config.postgres.client,
         connection: {
           host: dbConnection.host,
-          user: config.postgres.connection.user,
+          // user: config.postgres.connection.user,
+          user: "postgres",
           password: config.postgres.connection.password,
           database: dbConnection.database,
         },
@@ -194,7 +195,7 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
 // };
 
 const toggleTenant = async (req: Request, res: Response) => {
-  console.log(req.body)
+  console.log(req.body);
   const { tenantID, active } = req.body;
 
   console.table({ TenantID: tenantID, Active: active });
@@ -228,7 +229,7 @@ const toggleTenant = async (req: Request, res: Response) => {
     if (active) {
       // Enable tenant
       await trx.raw(
-        `GRANT CONNECT ON DATABASE "${dbConnection.database}" TO "${dbConnection.user}"`
+        `GRANT CONNECT ON DATABASE "${dbConnection.database}" TO "${dbConnection.user}"`,
       );
       await trx.raw(`ALTER USER "${dbConnection.user}" WITH LOGIN`);
 
@@ -236,14 +237,17 @@ const toggleTenant = async (req: Request, res: Response) => {
         active: true,
         deactivated_at: null, // Clear deactivated_at if reactivating
       });
-      
-      logger.info(`Tenant ${tenant.name} (ID: ${tenantID}) enabled successfully`);
-      res.status(httpStatus.OK).json({ message: "Tenant enabled successfully" });
 
+      logger.info(
+        `Tenant ${tenant.name} (ID: ${tenantID}) enabled successfully`,
+      );
+      res
+        .status(httpStatus.OK)
+        .json({ message: "Tenant enabled successfully" });
     } else {
       // Disable tenant
       await trx.raw(
-        `REVOKE CONNECT ON DATABASE "${dbConnection.database}" FROM "${dbConnection.user}"`
+        `REVOKE CONNECT ON DATABASE "${dbConnection.database}" FROM "${dbConnection.user}"`,
       );
       await trx.raw(`ALTER USER "${dbConnection.user}" WITH NOLOGIN`);
 
@@ -252,18 +256,22 @@ const toggleTenant = async (req: Request, res: Response) => {
         deactivated_at: new Date(),
       });
 
-      logger.info(`Tenant ${tenant.name} (ID: ${tenantID}) disabled successfully`);
-      res.status(httpStatus.OK).json({ message: "Tenant disabled successfully" });
+      logger.info(
+        `Tenant ${tenant.name} (ID: ${tenantID}) disabled successfully`,
+      );
+      res
+        .status(httpStatus.OK)
+        .json({ message: "Tenant disabled successfully" });
     }
 
     await trx.commit();
-
   } catch (error: any) {
     await trx.rollback();
     logger.error(`Failed to toggle tenant status: ${error.message}`);
-    res
-      .status(httpStatus.INTERNAL_SERVER_ERROR)
-      .json({ message: "Failed to toggle tenant status", error: error.message });
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      message: "Failed to toggle tenant status",
+      error: error.message,
+    });
   }
 };
 
