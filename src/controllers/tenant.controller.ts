@@ -71,8 +71,7 @@ const createTenant = catchAsync(async (req: Request, res: Response) => {
           host: dbConnection.host,
           user: config.postgres.connection.user,
           password: config.postgres.connection.password,
-          // database: dbConnection.database,
-          database: "postgres",
+          database: dbConnection.database,
         },
       });
 
