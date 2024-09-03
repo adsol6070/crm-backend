@@ -3,6 +3,8 @@ import catchAsync from "../utils/catchAsync";
 import { connectionService, userService } from "../services";
 import { Request, Response } from "express";
 import ApiError from "../utils/ApiError";
+import path from "path";
+import fs from "fs";
 
 const getUserProfile = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
@@ -18,7 +20,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
     connection,
     req.body,
     uploadedFile,
-    // req.user?.tenantID,
+    req.user?.tenantID,
   );
   const message = "User created successfully.";
   res.status(httpStatus.CREATED).json({ message, user });
@@ -63,6 +65,45 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).json({ message });
 });
 
+const updateProfileImage = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const userId = req.params.userId;
+  const uploadedFile = req.file as any;
+
+  if (!uploadedFile) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "No file uploaded");
+  }
+
+  // Validate user exists
+  const user = await userService.getUserByID(connection, userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Update user profile image
+  const updatedUser = await userService.updateUserById(
+    connection,
+    userId,
+    { profileImage: uploadedFile.filename },
+    uploadedFile,
+  );
+
+  // Remove old image file if exists
+  if (user.profileImage) {
+    const oldImagePath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      user.tenantID as string,
+      "User",
+      user.profileImage,
+    );
+    if (fs.existsSync(oldImagePath)) {
+      fs.unlinkSync(oldImagePath);
+    }
+  }
+});
+
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.deleteUserById(connection, req.params.userId);
@@ -75,6 +116,7 @@ export default {
   getUser,
   getUsers,
   updateUser,
+  updateProfileImage,
   deleteUser,
   getUserImage,
 };

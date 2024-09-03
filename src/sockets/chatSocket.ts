@@ -215,7 +215,14 @@ export const setupChatSocket = (
               "last_active",
             );
 
-          socket.emit("initialUsers", users);
+          const modifiedUsers = users.map((user: any) => ({
+            ...user,
+            profileImageUrl: user.profileImage
+              ? `http://192.168.1.25:8000/uploads/${socket.data.user.tenantID}/User/${user.profileImage}`
+              : null,
+          }));
+
+          socket.emit("initialUsers", modifiedUsers);
         }
       } catch (error) {
         handleError(error, "Error requesting initial users");
@@ -288,7 +295,18 @@ export const setupChatSocket = (
             );
           });
 
-          socket.emit("chatHistory", filteredChatHistory);
+          const baseUrl = "http://192.168.1.25:8000/uploads";
+
+          const updatedChatHistory = filteredChatHistory.map(
+            (filteredChat: any) => ({
+              ...filteredChat,
+              ...(filteredChat.file_url && {
+                chatFileUrl: `${baseUrl}/${socket.data.user.tenantID}/ChatMessageFiles/${filteredChat.file_url}`,
+              }),
+            }),
+          );
+
+          socket.emit("chatHistory", updatedChatHistory);
         }
       } catch (error) {
         handleError(error, "Error fetching chat history");
@@ -353,6 +371,7 @@ export const setupChatSocket = (
             fileSize,
             fromUserId,
           } = data;
+
           const newMessage = {
             id: uuidv4(),
             fromUserId,
@@ -363,14 +382,30 @@ export const setupChatSocket = (
             file_name: fileName,
             file_size: fileSize,
           };
+
+          const baseUrl = "http://192.168.1.25:8000/uploads";
+          const chatFileUrl = `${baseUrl}/${socket.data.user.tenantID}/ChatMessageFiles/${newMessage.file_url}`;
+
           await socket.data.connection("messages").insert(newMessage);
+
+          const updatedNewMessage = {
+            ...newMessage,
+            chatFileUrl,
+          };
+
           if (toUserId === socket.data.user.id) {
-            io.to(toUserId.toString()).emit("receiveMessage", newMessage);
+            io.to(toUserId.toString()).emit(
+              "receiveMessage",
+              updatedNewMessage,
+            );
           } else {
-            io.to(toUserId.toString()).emit("receiveMessage", newMessage);
+            io.to(toUserId.toString()).emit(
+              "receiveMessage",
+              updatedNewMessage,
+            );
             io.to(socket.data.user.id.toString()).emit(
               "receiveMessage",
-              newMessage,
+              updatedNewMessage,
             );
           }
         }

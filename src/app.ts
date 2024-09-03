@@ -15,6 +15,8 @@ import path from "path";
 
 const app: Application = express();
 
+app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
+
 const BASE_URL = `/api/${process.env.VERSION || "v1"}`;
 
 if (config.env !== "test") {

@@ -21,6 +21,14 @@ router.get(
   userController.getUserImage,
 );
 
+router.patch(
+  "/:userId/profile-image",
+  auth("Users", Permission.UPDATE),
+  upload.single("profileImage"),
+  connectionRequest,
+  userController.updateProfileImage,
+);
+
 router
   .route("/")
   .post(

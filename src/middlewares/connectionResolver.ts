@@ -67,7 +67,7 @@ const connectionRequest = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const tenantID = req.body.tenantID;
+  const tenantID = req.body.tenantID || req.user?.tenantID;
   const userEmail = req.body.email || req.user?.email;
 
   try {
@@ -81,7 +81,6 @@ const connectionRequest = async (
     }
     connectionService.runWithTenantContext(tenant, () => next());
   } catch (error) {
-    console.log("Error:", error)
     next(
       new ApiError(
         httpStatus.INTERNAL_SERVER_ERROR,

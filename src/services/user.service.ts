@@ -58,10 +58,14 @@ const getUserProfile = async (
       "profileImage",
       "isEmailVerified",
       "role",
-      "online"
+      "online",
     )
     .where({ id: userId })
     .first();
+
+    if (user) {
+      user.profileImageUrl = getUserImageUrl(user.profileImage, user.tenantID);
+    }
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -77,7 +81,7 @@ const createUser = async (
   tenantID?: string,
 ) => {
   try {
-    if (await commonService.isEmailTaken(connection, "users" , user.email)) {
+    if (await commonService.isEmailTaken(connection, "users", user.email)) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
     }
     const hashedPassword = await bcrypt.hash(user.password, 8);
@@ -101,7 +105,7 @@ const createUser = async (
       tenantID: user.tenantID ?? tenantID,
       email: user.email,
     };
-    
+
     await connection("users").insert(insertedUser);
     await commonKnex("users").insert(commonUser);
     return insertedUser;
@@ -111,7 +115,11 @@ const createUser = async (
 };
 
 const getUserByID = async (connection: Knex, id: string): Promise<any> => {
-  return await connection("users").where({ id }).first();
+  const user = await connection("users").where({ id }).first();
+  if (user) {
+    user.profileImageUrl = getUserImageUrl(user.profileImage, user.tenantID);
+  }
+  return user;
 };
 
 const getUserImageById = async (connection: Knex, id: string) => {
@@ -137,6 +145,15 @@ const getUserByEmail = async (
   return await connection("users").where({ email }).first();
 };
 
+const getUserImageUrl = (
+  profileImage: string | undefined,
+  tenantID: string | undefined,
+): string => {
+  if (!profileImage || !tenantID) return "";
+  const baseUrl = "http://192.168.1.25:8000/uploads";
+  return `${baseUrl}/${tenantID}/User/${profileImage}`;
+};
+
 const getAllUsers = async (connection: Knex): Promise<SafeUser[]> => {
   const users = await connection<SafeUser>("users").select(
     "id",
@@ -151,7 +168,10 @@ const getAllUsers = async (connection: Knex): Promise<SafeUser[]> => {
     "isEmailVerified",
     "role",
   );
-  return users;
+  return users.map((user) => ({
+    ...user,
+    profileImageUrl: getUserImageUrl(user.profileImage, user.tenantID),
+  }));
 };
 
 const updateUserById = async (

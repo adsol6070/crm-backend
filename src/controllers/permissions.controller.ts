@@ -68,9 +68,6 @@ const deletePermission = catchAsync(async (req: Request, res: Response) => {
 const getRoles = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const roles = await permissionsService.getRoles(connection);
-  if (!roles || roles.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, "No roles found");
-  }
   res.status(httpStatus.OK).json(roles);
 });
 
