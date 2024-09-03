@@ -157,6 +157,23 @@ router
     leadController.deleteSingleDocument,
   );
 
+  router
+  .route("/getSingleDocumentUrl/:leadId/:filename")
+  .get(
+    auth("manageLeads"),
+    connectionRequest,
+    leadController.getSingleDocumentURL,
+  )
+  
+  router
+  .route("/uploadSingleDocument")
+  .post(
+    auth("manageLeads"),
+    upload.single("documents"),
+    connectionRequest,
+    leadController.uploadSingleDocument,
+  )
+
 router
   .route("/leadStatus/:leadId")
   .patch(auth(), connectionRequest, leadController.updateLeadStatus);

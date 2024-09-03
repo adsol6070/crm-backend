@@ -801,6 +801,66 @@ const deleteAllLeadNotes = async (
 
   return deletedCount;
 };
+const uploadSingleDocument = async (
+  connection: Knex,
+  document: Document,
+  leadID: string,
+  tenantID: string,
+  uploadType: string,
+): Promise<void> => {
+
+  const existingRecord = await connection("document_checklists")
+    .where({ tenantID, leadID, uploadType })
+    .first();
+
+  if (existingRecord) {
+    let existingDocuments: Document[];
+    try {
+      existingDocuments = existingRecord.documents;
+    } catch (error) {
+      console.error("Failed to parse existing documents JSON:", error);
+      existingDocuments = []; // Initialize as empty if parsing fails
+    }
+
+    // Append the new document if it doesn't already exist
+    const documentExists = existingDocuments.some(
+      (existingDoc) => existingDoc.name === document.name
+    );
+
+    if (!documentExists) {
+      existingDocuments.push(document);
+
+      try {
+        await connection("document_checklists")
+          .where({ tenantID, leadID, uploadType })
+          .update({ documents: JSON.stringify(existingDocuments) });
+      } catch (error) {
+        console.error("Failed to update documents:", error);
+        throw new Error("Failed to update documents.");
+      }
+    }
+  } else {
+    const documentRecord = {
+      id: uuidv4(),
+      tenantID,
+      leadID,
+      documents: JSON.stringify([document]),
+      uploadType,
+    };
+
+    try {
+      await connection("document_checklists").insert(documentRecord);
+    } catch (error) {
+      console.error("Failed to insert new document record:", error);
+      throw new Error("Failed to insert new document record.");
+    }
+  }
+};
+
+const getAllLeadDocuments = async (connection: Knex) => {
+  return connection('document_checklists').select('tenantID', 'leadID');
+};
+
 
 export default {
   createLead,
@@ -831,4 +891,6 @@ export default {
   deleteLeadNoteById,
   deleteAllLeadNotes,
   getLeadNoteById,
+  uploadSingleDocument,
+  getAllLeadDocuments
 };

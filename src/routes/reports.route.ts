@@ -6,6 +6,10 @@ import { reportsController } from "../controllers";
 const router = express.Router();
 
 router
+    .route("/getCardsData")
+    .get(auth("Reports"), connectionRequest, reportsController.getCardsData);
+
+router
     .route("/getLeadBasedOnStatus")
     .get(auth("Reports"), connectionRequest, reportsController.getLeadsBasedonStatus);
 

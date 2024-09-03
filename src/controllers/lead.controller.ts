@@ -63,6 +63,11 @@ interface Document {
   size: number;
 }
 
+const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
+  const baseUrl = "http://192.168.1.17:8000/uploads";
+  return `${baseUrl}/${tenantID}/leadDocuments-${leadID}/${filename}`;
+};
+
 const createLead = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const lead = await leadService.createLead(connection, req.body);
@@ -80,12 +85,28 @@ const getSpecificLeads = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const userId = req.params.userId;
   const leads = await leadService.getSpecificLeads(connection, userId);
-  console.log(leads)
   res.status(httpStatus.OK).send(leads);
 });
 
 const deleteAllLeads = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
+  const allLeadDocuments = await leadService.getAllLeadDocuments(connection);
+
+  for (const leadDocuments of allLeadDocuments) {
+    const folderPath = path.join(
+      __dirname,
+      "..",
+      'uploads',
+      leadDocuments.tenantID,
+      `leadDocuments-${leadDocuments.leadID}`
+    );
+
+    if (fs.existsSync(folderPath)) {
+      fs.rmSync(folderPath, { recursive: true });
+    }
+    await leadService.deleteDocuments(connection, leadDocuments.leadID);
+  }
+
   await leadService.deleteAllLeads(connection);
   res.status(httpStatus.NO_CONTENT).send();
 });
@@ -96,8 +117,6 @@ const getLeadById = catchAsync(async (req: Request, res: Response) => {
   const lead = await leadService.getLeadById(connection, leadId);
   if (lead) {
     res.status(httpStatus.OK).send(lead);
-  } else {
-    res.status(httpStatus.NOT_FOUND).send({ message: "Lead not found" });
   }
 });
 
@@ -113,8 +132,6 @@ const updateLeadById = catchAsync(async (req: Request, res: Response) => {
   if (updatedLead) {
     const message = "Lead updated successfully.";
     res.status(httpStatus.OK).json({ updatedLead, message });
-  } else {
-    res.status(httpStatus.NOT_FOUND).send({ message: "Lead not found" });
   }
 });
 
@@ -137,8 +154,6 @@ const deleteLeadById = catchAsync(async (req: Request, res: Response) => {
   if (deletedCount) {
     const message = "Lead deleted successfully.";
     res.status(httpStatus.NO_CONTENT).json({ message });
-  } else {
-    res.status(httpStatus.NOT_FOUND).send({ message: "Lead not found" });
   }
 });
 
@@ -174,10 +189,6 @@ const getVisaCategoryById = catchAsync(async (req: Request, res: Response) => {
   );
   if (visaCategory) {
     res.status(httpStatus.OK).send(visaCategory);
-  } else {
-    res
-      .status(httpStatus.NOT_FOUND)
-      .send({ message: "Visa category not found" });
   }
 });
 
@@ -192,10 +203,6 @@ const updateVisaCategory = catchAsync(async (req: Request, res: Response) => {
   );
   if (updatedVisaCategory) {
     res.status(httpStatus.OK).send(updatedVisaCategory);
-  } else {
-    res
-      .status(httpStatus.NOT_FOUND)
-      .send({ message: "Visa Category not found" });
   }
 });
 
@@ -208,10 +215,6 @@ const deleteVisaCategoryById = catchAsync(async (req: Request, res: Response) =>
   );
   if (deletedCount) {
     res.status(httpStatus.NO_CONTENT).send();
-  } else {
-    res
-      .status(httpStatus.NOT_FOUND)
-      .send({ message: "Visa Category not found" });
   }
 });
 
@@ -276,14 +279,12 @@ const updateSingleDocuments = catchAsync(async (req: Request, res: Response) => 
   const leadDocuments = await leadService.getLeadDocumentsById(connection, leadId);
 
   const documentIndex = leadDocuments.documents.findIndex((doc: any) => doc.filename === filename);
-  console.log("DocumentIndex:", documentIndex);
 
   if (documentIndex === -1) {
     return res.status(404).json({ message: 'Document not found' });
   }
 
   const oldFilePath = path.join(__dirname, "..", 'uploads', leadDocuments.tenantID, `leadDocuments-${leadDocuments.leadID}`, filename);
-  console.log("OldFilePath:", oldFilePath);
 
   if (fs.existsSync(oldFilePath)) {
     fs.unlinkSync(oldFilePath);
@@ -434,7 +435,7 @@ const createLeadNote = catchAsync(async (req: Request, res: Response) => {
   const leadNoteData = {
     ...req.body,
     lead_id: leadId,
-  } 
+  }
   const leadNote = await leadService.createLeadNote(connection, leadNoteData);
   const message = "Lead Note created successfully.";
   res.status(httpStatus.CREATED).json({ leadNote, message });
@@ -472,7 +473,6 @@ const updateLeadNote = catchAsync(async (req: Request, res: Response) => {
 const deleteLeadNoteById = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const noteId = req.params.noteId;
-  console.log("lead note id ", noteId)
   await leadService.deleteLeadNoteById(connection, noteId);
   res.status(httpStatus.NO_CONTENT).send();
 });
@@ -480,10 +480,63 @@ const deleteLeadNoteById = catchAsync(async (req: Request, res: Response) => {
 const deleteAllNotes = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const leadId = req.params.leadId;
- await leadService.deleteAllLeadNotes(connection, leadId);
+  await leadService.deleteAllLeadNotes(connection, leadId);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const getSingleDocumentURL = catchAsync(async (req, res) => {
+  const { leadId, filename } = req.params;
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const leadDocuments = await leadService.getLeadDocumentsById(connection, leadId);
+
+  if (!leadDocuments || !leadDocuments.documents) {
+    return res.status(404).json({ message: 'Lead documents not found' });
+  }
+
+  const document = leadDocuments.documents.find((doc: any) => doc.filename === filename);
+
+  if (!document) {
+    return res.status(404).json({ message: 'Document not found' });
+  }
+
+  const filePath = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    leadDocuments.tenantID,
+    `leadDocuments-${leadDocuments.leadID}`,
+    filename
+  );
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+
+  // Generate URL instead of streaming the file
+  const documentUrl = getDocumentUrl(filename, leadDocuments.tenantID, leadDocuments.leadID);
+
+  return res.status(200).json({ url: documentUrl });
+});
+
+const uploadSingleDocument = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const { tenantID, leadID, name, uploadType } = req.body;
+  const file: Document = req.file as Express.Multer.File;
+
+  const document = {
+    name: name,
+    originalname: file.originalname,
+    filename: file.filename,
+    path: file.path,
+    mimetype: file.mimetype,
+    size: file.size,
+  };
+
+  const response = await leadService.uploadSingleDocument(connection, document, leadID, tenantID, uploadType);
+  const message = "Lead Document uploaded successfully.";
+  res.status(httpStatus.CREATED).json({ message });
+});
 
 export default {
   createLead,
@@ -518,4 +571,6 @@ export default {
   updateLeadNote,
   deleteLeadNoteById,
   deleteAllNotes,
+  getSingleDocumentURL,
+  uploadSingleDocument,
 };

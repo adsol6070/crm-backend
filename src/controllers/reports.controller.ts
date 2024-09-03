@@ -4,6 +4,15 @@ import { connectionService, reportService } from "../services";
 import { Request, Response } from "express";
 import ApiError from "../utils/ApiError";
 
+const getCardsData = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const cardsData = await reportService.getCardsData(connection);
+  // if (!leadReportsOnStatus || leadReportsOnStatus.length === 0) {
+  //   throw new ApiError(httpStatus.NOT_FOUND, "Leads not found");
+  // }
+  res.status(httpStatus.OK).send(cardsData);
+});
+
 const getLeadsBasedonStatus = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const leadReportsOnStatus = await reportService.getLeadsBasedonStatus(connection);
@@ -44,6 +53,7 @@ const getCreatedLeadsBasedOnSource = catchAsync(async (req: Request, res: Respon
 });
 
 export default {
+  getCardsData,
   getLeadsBasedonStatus,
   getCreatedLeadsBasedOnTime,
   getCreatedLeadsBasedOnSource,

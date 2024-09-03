@@ -7,7 +7,7 @@ import httpStatus from "http-status";
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
     try {
-      const tenantId = req.body.tenantID;
+      const tenantId = req.body.tenantID || req.user?.tenantID;
       const uploadType = req.body.uploadType || "General";
       const uploadPath = path.join(
         __dirname,
@@ -48,8 +48,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1000000 },
+  limits: { fileSize: 100000000 },
   fileFilter: (req, file, callback) => {
+    
     try {
       const filetypes =
         req.body.uploadType === "Blog"

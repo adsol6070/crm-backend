@@ -1,5 +1,31 @@
 import { Knex } from "knex";
 
+const getCardsData = async (connection: Knex): Promise<any> => {
+  const leadData: any = await connection("leads")
+    .count("* as count")
+    .first();
+
+    const blogData: any = await connection("blogs")
+    .count("* as count")
+    .first();
+
+    const userData: any = await connection("users")
+    .count("* as count")
+    .first();
+
+    const calculatedData: any = await connection("CRSscores")
+    .count("* as count")
+    .first();
+
+    const cardsData = {
+      leadsCount: parseInt(leadData.count),
+      blogsCount: parseInt(blogData.count),
+      usersCount: parseInt(userData.count),
+      scoresCount: parseInt(calculatedData.count),
+    }
+    return cardsData;
+}
+
 const getLeadsBasedonStatus = async (connection: Knex): Promise<any> => {
   const cteQuery = connection
     .with('all_leads', (qb) => {
@@ -41,6 +67,7 @@ const getCreatedLeadsBasedOnSource = async (connection: Knex): Promise<any> => {
 };
 
 export default {
+  getCardsData,
   getLeadsBasedonStatus,
   getCreatedLeadsBasedOnTime,
   getCreatedLeadsBasedOnSource,
