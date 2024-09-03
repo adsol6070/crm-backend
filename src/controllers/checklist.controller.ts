@@ -36,7 +36,6 @@ const getChecklistByVisaType = catchAsync(async (req: Request, res: Response) =>
 const updateChecklistById = catchAsync(async (req: Request, res: Response) => {
     const { checklistId } = req.params;
     const updatedChecklistsData = req.body;
-    console.log(checklistId, updatedChecklistsData)
     const connection = await connectionService.getCurrentTenantKnex();
     const updatedChecklists = await checklistService.updatedChecklistsById(connection, checklistId, updatedChecklistsData.checklist);
     res.status(httpStatus.OK).json({ updatedChecklists });

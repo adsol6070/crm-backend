@@ -14,6 +14,7 @@ import { jwtStrategy } from "./config/passport";
 import path from "path";
 
 const app: Application = express();
+app.use("/uploads", express.static(path.join(__dirname, "./uploads")))
 
 app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 

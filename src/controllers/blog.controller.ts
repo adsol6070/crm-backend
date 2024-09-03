@@ -4,11 +4,12 @@ import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
 import path from "path";
 import fs from "fs";
+import ApiError from "../utils/ApiError";
 
 const createBlog = catchAsync(async (req: Request, res: Response) => {
   const uploadedFile = req.file as any;
   const connection = await connectionService.getCurrentTenantKnex();
-  const blog = await blogService.createBlog(connection, req.body, uploadedFile);
+  const blog = await blogService.createBlog(connection, req.body, uploadedFile, req.user?.tenantID);
   const message = "Blog created successfully.";
   res.status(httpStatus.CREATED).json({ blog, message });
 });
@@ -44,20 +45,18 @@ const updateBlogById = catchAsync(async (req: Request, res: Response) => {
   const getBlog = await blogService.getBlogById(connection, blogId);
   const blogImage = getBlog.blogImage as string;
 
-  const filePath = path.join(
-    __dirname,
-    "..",
-    "uploads",
-    getBlog.tenantID,
-    "Blog",
-    blogImage,
-  );
+  if (blogImage) {
+    const filePath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      getBlog.tenantID,
+      "Blog",
+      blogImage,
+    );
 
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ message: "File not found" });
+    fs.unlinkSync(filePath);
   }
-
-  fs.unlinkSync(filePath);
   const updateData = req.body;
   const updatedBlog = await blogService.updateBlogById(
     connection,
@@ -75,20 +74,22 @@ const deleteBlogById = catchAsync(async (req: Request, res: Response) => {
   const getBlog = await blogService.getBlogById(connection, blogId);
   const blogImage = getBlog.blogImage as string;
 
-  const filePath = path.join(
-    __dirname,
-    "..",
-    "uploads",
-    getBlog.tenantID,
-    "Blog",
-    blogImage,
-  );
+  if (blogImage) {
+    const filePath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      getBlog.tenantID,
+      "Blog",
+      blogImage,
+    );
 
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ message: "File not found" });
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    fs.unlinkSync(filePath);
   }
-
-  fs.unlinkSync(filePath);
 
   const deletedCount = await blogService.deleteBlogById(connection, blogId);
 

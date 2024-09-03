@@ -17,14 +17,14 @@ interface Blog {
 }
 
 interface UploadedFile {
-  fieldname: string; 
-  originalname: string; 
-  encoding: string; 
-  mimetype: string; 
-  destination: string; 
-  filename: string; 
-  path: string; 
-  size: number; 
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  destination: string;
+  filename: string;
+  path: string;
+  size: number;
 }
 
 interface BlogCategory {
@@ -39,11 +39,13 @@ const createBlog = async (
   connection: Knex,
   blog: Blog,
   file?: UploadedFile,
+  tenantID?: string
 ): Promise<Blog> => {
   const { uploadType, ...blogWithoutUploadType } = blog;
   const blogData: Blog = {
     ...blogWithoutUploadType,
     id: uuidv4(),
+    tenantID: tenantID as string,
     ...(file && { blogImage: file.filename }),
   };
 
@@ -53,16 +55,34 @@ const createBlog = async (
   return insertedBlog;
 };
 
-const getAllBlogs = async (connection: Knex): Promise<Blog[]> => {
-  return await connection("blogs").select("*");
+const getBlogImageUrl = (
+  blogImage: string | undefined,
+  tenantID: string | undefined,
+): string => {
+  if (!blogImage || !tenantID) return "";
+  const baseUrl = "http://192.168.1.17:8000/uploads";
+  return `${baseUrl}/${tenantID}/Blog/${blogImage}`;
+};
+
+const getAllBlogs = async (connection: Knex) => {
+  const blogs = await connection("blogs").select("*");
+  return blogs.map((blog) => ({
+    ...blog,
+    blogImageUrl: getBlogImageUrl(blog.blogImage, blog.tenantID),
+  }));
 };
 
 const getBlogById = async (connection: Knex, blogId: string): Promise<Blog> => {
   const blog = await connection("blogs").where({ id: blogId }).first();
-  if (!blog) {
+  const blogWithImageUrl = {
+    ...blog,
+    blogImageUrl: getBlogImageUrl(blog.blogImage, blog.tenantID),
+  }
+
+  if (!blogWithImageUrl) {
     throw new ApiError(httpStatus.NOT_FOUND, "Blog not found");
   }
-  return blog;
+  return blogWithImageUrl;
 };
 
 const getBlogImageById = async (connection: Knex, id: string) => {
@@ -70,15 +90,15 @@ const getBlogImageById = async (connection: Knex, id: string) => {
   if (!blog) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Blog not found");
   }
-  const image = path.join(
-    __dirname,
-    "..",
-    "uploads",
-    blog.tenantID as string,
-    "Blog",
-    blog.blogImage,
-  );
-  return image;
+    const image = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      blog.tenantID as string,
+      "Blog",
+      blog.blogImage,
+    );
+    return image;
 };
 
 const updateBlogById = async (
