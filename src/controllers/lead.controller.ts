@@ -64,13 +64,13 @@ interface Document {
 }
 
 const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
-  const baseUrl = "http://192.168.1.17:8000/uploads";
+  const baseUrl = "http://192.168.1.16:8000/uploads";
   return `${baseUrl}/${tenantID}/leadDocuments-${leadID}/${filename}`;
 };
 
 const createLead = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  const lead = await leadService.createLead(connection, req.body);
+  const lead = await leadService.createLead(connection, req.body, req.user);
   const message = "Lead created successfully.";
   res.status(httpStatus.CREATED).json({ lead, message });
 });

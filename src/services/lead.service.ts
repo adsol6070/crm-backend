@@ -120,7 +120,7 @@ const capitalizeFirstLetterOfEachWord = (str: string | undefined) => {
   });
 }
 
-const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
+const createLead = async (connection: Knex, lead: Lead, user: any): Promise<Lead> => {
   // const leadEmail = await commonService.isEmailTaken(connection, "leads", lead.email)
   // if (leadEmail) {
   //   throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -137,6 +137,7 @@ const createLead = async (connection: Knex, lead: Lead): Promise<Lead> => {
   const correctedData = {
     ...leadData,
     id: uuidv4(),
+    tenantID: user.tenantID,
     userID,
     visaCategory: String(leadData.visaCategory).toLowerCase(),
     leadSource: String(leadData.leadSource).toLowerCase(),

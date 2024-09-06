@@ -218,7 +218,7 @@ export const setupChatSocket = (
           const modifiedUsers = users.map((user: any) => ({
             ...user,
             profileImageUrl: user.profileImage
-              ? `http://192.168.1.25:8000/uploads/${socket.data.user.tenantID}/User/${user.profileImage}`
+              ? `http://192.168.1.16:8000/uploads/${socket.data.user.tenantID}/User/${user.profileImage}`
               : null,
           }));
 
@@ -295,7 +295,7 @@ export const setupChatSocket = (
             );
           });
 
-          const baseUrl = "http://192.168.1.25:8000/uploads";
+          const baseUrl = "http://192.168.1.16:8000/uploads";
 
           const updatedChatHistory = filteredChatHistory.map(
             (filteredChat: any) => ({
@@ -383,7 +383,7 @@ export const setupChatSocket = (
             file_size: fileSize,
           };
 
-          const baseUrl = "http://192.168.1.25:8000/uploads";
+          const baseUrl = "http://192.168.1.16:8000/uploads";
           const chatFileUrl = `${baseUrl}/${socket.data.user.tenantID}/ChatMessageFiles/${newMessage.file_url}`;
 
           await socket.data.connection("messages").insert(newMessage);
