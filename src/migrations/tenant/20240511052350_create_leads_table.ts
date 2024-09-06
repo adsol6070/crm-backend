@@ -43,7 +43,6 @@ export async function up(knex: Knex): Promise<void> {
       table.string("leadRating");
       table.timestamps(true, true);
     });
-    
   } catch (error) {
     throw error;
   }

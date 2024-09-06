@@ -70,7 +70,7 @@ const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
 
 const createLead = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  const lead = await leadService.createLead(connection, req.body);
+  const lead = await leadService.createLead(connection, req.body, req.user);
   const message = "Lead created successfully.";
   res.status(httpStatus.CREATED).json({ lead, message });
 });
