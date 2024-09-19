@@ -164,6 +164,23 @@ const deleteAllLeads = async (connection: Knex) => {
   return deletedCount;
 };
 
+const getLeadDocumentsByIds = async (connection: Knex, leadIds: string[]) => {
+  return connection('document_checklists')
+    .select('tenantID', 'leadID')
+    .whereIn('leadID', leadIds);
+};
+
+const deleteSelectedLeads = async (connection: Knex, leadIds: string[]): Promise<number> => {
+  const deletedCount = await connection("leads")
+    .whereIn('id', leadIds)
+    .delete();
+
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No leads found to delete");
+  }
+  return deletedCount;
+};
+
 const getSpecificLeads = async (connection: Knex, userId: string): Promise<Lead[]> => {
   return await connection('leads')
     .leftJoin('lead_assignees', 'leads.id', 'lead_assignees.lead_id')
@@ -351,9 +368,11 @@ const updateLeadStatus = async (
 const createVisaCategory = async (
   connection: Knex,
   visaCategory: VisaCategory,
+  tenantID?: string
 ): Promise<VisaCategory> => {
   const updatedVisaCategory = {
     ...visaCategory,
+    tenantID,
     id: uuidv4(),
     category: visaCategory.category.toLowerCase()
   };
@@ -820,10 +839,9 @@ const uploadSingleDocument = async (
       existingDocuments = existingRecord.documents;
     } catch (error) {
       console.error("Failed to parse existing documents JSON:", error);
-      existingDocuments = []; // Initialize as empty if parsing fails
+      existingDocuments = []; 
     }
 
-    // Append the new document if it doesn't already exist
     const documentExists = existingDocuments.some(
       (existingDoc) => existingDoc.name === document.name
     );
@@ -862,7 +880,6 @@ const getAllLeadDocuments = async (connection: Knex) => {
   return connection('document_checklists').select('tenantID', 'leadID');
 };
 
-
 export default {
   createLead,
   getAllLeads,
@@ -893,5 +910,7 @@ export default {
   deleteAllLeadNotes,
   getLeadNoteById,
   uploadSingleDocument,
-  getAllLeadDocuments
+  getAllLeadDocuments,
+  getLeadDocumentsByIds,
+  deleteSelectedLeads
 };

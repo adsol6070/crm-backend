@@ -64,7 +64,7 @@ interface Document {
 }
 
 const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
-  const baseUrl = "http://192.168.1.16:8000/uploads";
+  const baseUrl = "http://192.168.1.12:8000/uploads";
   return `${baseUrl}/${tenantID}/leadDocuments-${leadID}/${filename}`;
 };
 
@@ -109,6 +109,57 @@ const deleteAllLeads = catchAsync(async (req: Request, res: Response) => {
 
   await leadService.deleteAllLeads(connection);
   res.status(httpStatus.NO_CONTENT).send();
+});
+
+const deleteSelectedLeads = catchAsync(async (req: Request, res: Response) => {
+  const { leadIds } = req.body; 
+  if (!Array.isArray(leadIds) || leadIds.length === 0) {
+    return res.status(httpStatus.BAD_REQUEST).send("No lead IDs provided");
+  }
+
+  const connection = await connectionService.getCurrentTenantKnex();
+
+  const allLeadDocuments = await leadService.getLeadDocumentsByIds(connection, leadIds);
+
+  for (const leadDocuments of allLeadDocuments) {
+    const folderPath = path.join(
+      __dirname,
+      "..",
+      'uploads',
+      leadDocuments.tenantID,
+      `leadDocuments-${leadDocuments.leadID}`
+    );
+    if (fs.existsSync(folderPath)) {
+      fs.rmSync(folderPath, { recursive: true });
+    }
+    await leadService.deleteDocuments(connection, leadDocuments.leadID);
+  }
+
+  await leadService.deleteSelectedLeads(connection, leadIds);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const updateLeadsBulk = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const { leadIds, leadStatus } = req.body;
+
+  const updatedLeads = [];
+
+  for (const leadId of leadIds) {
+    const data = {
+      leadStatus,
+      userID: req.user?.id,
+    }
+    const updatedLead = await leadService.updateLeadStatus(connection, leadId, data);
+    updatedLeads.push(updatedLead);
+  }
+
+  if (updatedLeads.length > 0) {
+    const message = "Leads updated successfully.";
+    res.status(httpStatus.OK).json({ updatedLeads, message });
+  } else {
+    res.status(httpStatus.BAD_REQUEST).json({ message: "No leads were updated." });
+  }
 });
 
 const getLeadById = catchAsync(async (req: Request, res: Response) => {
@@ -169,6 +220,7 @@ const createVisaCategory = catchAsync(async (req: Request, res: Response) => {
   const visaCategory = await leadService.createVisaCategory(
     connection,
     req.body,
+    req.user?.tenantID
   );
   const message = "Visa Category created successfully.";
   res.status(httpStatus.CREATED).json({ visaCategory, message });
@@ -573,4 +625,6 @@ export default {
   deleteAllNotes,
   getSingleDocumentURL,
   uploadSingleDocument,
+  deleteSelectedLeads,
+  updateLeadsBulk
 };

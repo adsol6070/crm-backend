@@ -105,6 +105,7 @@ const createBlogCategory = catchAsync(async (req: Request, res: Response) => {
   const blogCategory = await blogService.createBlogCategory(
     connection,
     req.body,
+    req.user?.tenantID
   );
   const message = "Blog Category created successfully.";
   res.status(httpStatus.CREATED).json({ blogCategory, message });

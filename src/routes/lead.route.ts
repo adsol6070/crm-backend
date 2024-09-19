@@ -73,6 +73,22 @@ router
   );
 
 router
+  .route("/deleteSelected")
+  .post(
+    auth("Leads", LeadPermissions.DELETESELECTED),
+    connectionRequest,
+    leadController.deleteSelectedLeads,
+  );
+
+router
+  .route("/updateSelected")
+  .post(
+    auth("Leads", LeadPermissions.UPDATESELECETED),
+    connectionRequest,
+    leadController.updateLeadsBulk,
+  );
+
+router
   .route("/getSpecificLeads/:userId")
   .get(auth("getLeads"), connectionRequest, leadController.getSpecificLeads);
 
@@ -157,15 +173,15 @@ router
     leadController.deleteSingleDocument,
   );
 
-  router
+router
   .route("/getSingleDocumentUrl/:leadId/:filename")
   .get(
     auth("manageLeads"),
     connectionRequest,
     leadController.getSingleDocumentURL,
   )
-  
-  router
+
+router
   .route("/uploadSingleDocument")
   .post(
     auth("manageLeads"),

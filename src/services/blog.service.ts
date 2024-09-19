@@ -60,7 +60,7 @@ const getBlogImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!blogImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.16:8000/uploads";
+  const baseUrl = "http://192.168.1.12:8000/uploads";
   return `${baseUrl}/${tenantID}/Blog/${blogImage}`;
 };
 
@@ -137,9 +137,11 @@ const deleteBlogById = async (
 const createBlogCategory = async (
   connection: Knex,
   blogCategory: BlogCategory,
+  tenantID?: string
 ): Promise<BlogCategory> => {
   const updatedBlogCategory = {
     ...blogCategory,
+    tenantID,
     id: uuidv4(),
   };
   const [insertedBlogCategory] = await connection("blogCategory")

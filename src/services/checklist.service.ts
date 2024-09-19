@@ -9,9 +9,10 @@ interface Data {
     checklist: string,
 }
 
-const createChecklist = async (connection: Knex, data: Data): Promise<Data> => {
+const createChecklist = async (connection: Knex, data: Data, tenantID?: string): Promise<Data> => {
     const correctedData = {
         ...data,
+        tenantID,
         id: uuidv4()
     }
     const [insertedData] = await connection("visa_checklists")
@@ -49,6 +50,8 @@ const updatedChecklistsById = async (connection: Knex, checklistId: string, upda
     if (!checklist) {
         throw new ApiError(httpStatus.NOT_FOUND, "Checklist not found");
     }
+    console.log("ChecklistId ", checklistId)
+    console.log("Updated Checklist ", updatedChecklists)
     const updatedData = await connection("visa_checklists")
     .where({ id: checklistId })
     .update({ checklist: updatedChecklists });

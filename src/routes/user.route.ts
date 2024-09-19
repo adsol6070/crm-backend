@@ -62,6 +62,14 @@ router
     userController.deleteUser,
   );
 
+  router
+  .route("/deleteSelected")
+  .post(
+    auth("Users", Permission.DELETESELECTED),
+    connectionRequest,
+    userController.deleteSelectedUsers,
+  )
+
 router.get(
   "/:userId/image",
   auth("Users", Permission.READ),

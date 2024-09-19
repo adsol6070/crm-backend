@@ -3,6 +3,7 @@ export enum Permission {
   READ = "Read",
   UPDATE = "Update",
   DELETE = "Delete",
+  DELETESELECTED= "DeleteSelected"
 }
 
 export enum LeadPermissions {
@@ -16,4 +17,6 @@ export enum LeadPermissions {
   DELETE = "Delete",
   DELETEALL = "DeleteAll",
   IMPORTBULK = "ImportBulk",
+  DELETESELECTED= "DeleteSelected",
+  UPDATESELECETED= "UpdateSelected"
 }

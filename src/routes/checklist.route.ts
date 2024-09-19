@@ -40,5 +40,4 @@ router
         checklistController.getChecklistByVisaType
     )
 
-
 export default router;

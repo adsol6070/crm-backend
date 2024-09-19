@@ -10,8 +10,8 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.table("leads", (table: Knex.AlterTableBuilder) => {
-    table.dropColumn("dob");
-    table.dropColumn("passportExpiry");
-    table.dropColumn("followUpDates");
+    table.date("dob").alter();
+    table.date("passportExpiry").alter();
+    table.date("followUpDates").alter();
   });
 }

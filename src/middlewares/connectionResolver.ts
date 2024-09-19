@@ -67,7 +67,6 @@ const connectionRequest = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  console.log("Request User:", req.user);
   const tenantID = req.body.tenantID || req.user?.tenantID;
   const userEmail = req.body.email || req.user?.email;
 

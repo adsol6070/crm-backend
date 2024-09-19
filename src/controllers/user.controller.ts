@@ -110,6 +110,19 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const deleteSelectedUsers = catchAsync(async (req: Request, res: Response) => {
+  const { userIds } = req.body;
+
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    return res.status(httpStatus.BAD_REQUEST).send("No user IDs provided");
+  }
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const deletedCount = await userService.deleteUsersByIds(connection, userIds);
+
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
 export default {
   getUserProfile,
   createUser,
@@ -119,4 +132,5 @@ export default {
   updateProfileImage,
   deleteUser,
   getUserImage,
+  deleteSelectedUsers,
 };

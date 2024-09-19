@@ -8,6 +8,7 @@ const createChecklist = catchAsync(async (req: Request, res: Response) => {
     const checklist = await checklistService.createChecklist(
         connection,
         req.body,
+        req.user?.tenantID
     );
     const message = "Checklist created successfully.";
     res.status(httpStatus.CREATED).json({ message, checklist });
