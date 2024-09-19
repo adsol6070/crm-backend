@@ -17,6 +17,7 @@ interface Score {
 const createScore = async (
     connection: Knex,
     score: Score,
+    tenantID?: string,
 ): Promise<Score> => {
     const scoreData: Score = {
         ...score,

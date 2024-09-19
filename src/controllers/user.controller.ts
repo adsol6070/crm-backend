@@ -102,11 +102,21 @@ const updateProfileImage = catchAsync(async (req: Request, res: Response) => {
       fs.unlinkSync(oldImagePath);
     }
   }
+
+  res.status(httpStatus.OK).json({
+    message: "Profile image updated successfully",
+  });
 });
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const user = await userService.deleteUserById(connection, req.params.userId);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const deleteAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  await userService.deleteAllUsers(connection);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
@@ -119,4 +129,5 @@ export default {
   updateProfileImage,
   deleteUser,
   getUserImage,
+  deleteAllUsers,
 };

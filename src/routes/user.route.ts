@@ -69,4 +69,11 @@ router.get(
   userController.getUserImage,
 );
 
+router.delete(
+  "/all",
+  auth("Users", Permission.DELETE),
+  connectionRequest,
+  userController.deleteAllUsers,
+);
+
 export default router;

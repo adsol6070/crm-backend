@@ -147,8 +147,6 @@ const toggleTenant = async (req: Request, res: Response) => {
   console.log(req.body);
   const { tenantID, active } = req.body;
 
-  console.table({ TenantID: tenantID, Active: active });
-
   if (!tenantID) {
     return res
       .status(httpStatus.BAD_REQUEST)
@@ -270,14 +268,18 @@ const deleteTenant = catchAsync(async (req: Request, res: Response) => {
   const { tenantID } = req.params;
 
   if (!tenantID) {
-    return res.status(httpStatus.BAD_REQUEST).json({ message: "Tenant ID is required" });
+    return res
+      .status(httpStatus.BAD_REQUEST)
+      .json({ message: "Tenant ID is required" });
   }
 
   try {
-    const tenant = await commonKnex('tenants').where({ tenantID }).first();
+    const tenant = await commonKnex("tenants").where({ tenantID }).first();
 
     if (!tenant) {
-      return res.status(httpStatus.NOT_FOUND).json({ message: "Tenant not found" });
+      return res
+        .status(httpStatus.NOT_FOUND)
+        .json({ message: "Tenant not found" });
     }
 
     const dbConnection = tenant.db_connection;
@@ -296,10 +298,12 @@ const deleteTenant = catchAsync(async (req: Request, res: Response) => {
         },
       });
 
-      const schemaExists = await superTenantKnex.raw(`SELECT 1 FROM pg_namespace WHERE nspname = 'public'`);
+      const schemaExists = await superTenantKnex.raw(
+        `SELECT 1 FROM pg_namespace WHERE nspname = 'public'`,
+      );
       if (schemaExists.rowCount > 0) {
-        await superTenantKnex.raw('DROP SCHEMA public CASCADE');
-        await superTenantKnex.raw('CREATE SCHEMA public');
+        await superTenantKnex.raw("DROP SCHEMA public CASCADE");
+        await superTenantKnex.raw("CREATE SCHEMA public");
         logger.info(`Dropped all tables and sequences in ${database}`);
       } else {
         logger.warn(`Schema public does not exist in ${database}`);
@@ -321,21 +325,30 @@ const deleteTenant = catchAsync(async (req: Request, res: Response) => {
       await commonKnex.raw(`DROP USER IF EXISTS "${user}"`);
       logger.info(`User ${user} deleted successfully`);
 
-      await trx('tenants').where({ tenantID }).del();
+      await trx("tenants").where({ tenantID }).del();
 
       await trx.commit();
 
-      logger.info(`Tenant ${tenant.name} deleted successfully with ID: ${tenantID}`);
-      res.status(httpStatus.OK).json({ message: "Tenant deleted successfully", tenantID });
+      logger.info(
+        `Tenant ${tenant.name} deleted successfully with ID: ${tenantID}`,
+      );
+      res
+        .status(httpStatus.OK)
+        .json({ message: "Tenant deleted successfully", tenantID });
     } catch (error: any) {
       await trx.rollback();
-      logger.error(`Failed to delete tenant database or user: ${JSON.stringify(error)}`);
-      res
-        .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json({ message: "Failed to delete tenant database or user", error: error.message });
+      logger.error(
+        `Failed to delete tenant database or user: ${JSON.stringify(error)}`,
+      );
+      res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        message: "Failed to delete tenant database or user",
+        error: error.message,
+      });
     }
   } catch (error: any) {
-    logger.error(`Failed to fetch tenant or initiate transaction: ${JSON.stringify(error)}`);
+    logger.error(
+      `Failed to fetch tenant or initiate transaction: ${JSON.stringify(error)}`,
+    );
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       message: "Failed to delete tenant",
       error: error.message,

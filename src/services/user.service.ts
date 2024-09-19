@@ -63,9 +63,9 @@ const getUserProfile = async (
     .where({ id: userId })
     .first();
 
-    if (user) {
-      user.profileImageUrl = getUserImageUrl(user.profileImage, user.tenantID);
-    }
+  if (user) {
+    user.profileImageUrl = getUserImageUrl(user.profileImage, user.tenantID);
+  }
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -150,7 +150,7 @@ const getUserImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!profileImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.17:8000/uploads";
+  const baseUrl = "http://192.168.1.35:8000/uploads";
   return `${baseUrl}/${tenantID}/User/${profileImage}`;
 };
 
@@ -245,6 +245,15 @@ const deleteUserById = async (connection: Knex, userId: string) => {
   return deletedCount;
 };
 
+const deleteAllUsers = async (connection: Knex) => {
+  const deletedCount = await connection("users").del();
+  await commonKnex("users").del();
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No users found to delete");
+  }
+  return deletedCount;
+};
+
 export default {
   getUserProfile,
   createUser,
@@ -254,4 +263,5 @@ export default {
   getUserByEmail,
   updateUserById,
   deleteUserById,
+  deleteAllUsers,
 };

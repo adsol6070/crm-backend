@@ -20,8 +20,6 @@ const verifyCallback =
       );
     }
 
-    console.log("Request User In auth:", req.user)
-
     req.user = user;
 
     if (!category || requiredRights.length === 0) {
