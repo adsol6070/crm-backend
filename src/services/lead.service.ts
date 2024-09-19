@@ -20,11 +20,11 @@ interface Lead {
   passportNumber?: string;
   passportExpiry?: string;
   currentAddress?: string;
-  country?: string,
-  state?: string,
-  district?: string,
-  city?: string,
-  pincode?: string,
+  country?: string;
+  state?: string;
+  district?: string;
+  city?: string;
+  pincode?: string;
   permanentAddress?: string;
   highestQualification?: string;
   fieldOfStudy?: string;
@@ -118,16 +118,21 @@ const capitalizeFirstLetterOfEachWord = (str: string | undefined) => {
   return str?.replace(/\b\w/g, function (char) {
     return char.toUpperCase();
   });
-}
+};
 
-const createLead = async (connection: Knex, lead: Lead, user: any): Promise<Lead> => {
+const createLead = async (
+  connection: Knex,
+  lead: Lead,
+  user: any,
+): Promise<Lead> => {
   // const leadEmail = await commonService.isEmailTaken(connection, "leads", lead.email)
   // if (leadEmail) {
   //   throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   // }
   const { ...leadData } = lead;
-  const passportExpiry = leadData.passportExpiry === '' ? null : leadData.passportExpiry;
-  const userID = leadData.userID === 'By QR Code' ? null : leadData.userID;
+  const passportExpiry =
+    leadData.passportExpiry === "" ? null : leadData.passportExpiry;
+  const userID = leadData.userID === "By QR Code" ? null : leadData.userID;
   const leadHistoryEntry = {
     action: "Created",
     timestamp: new Date().toISOString(),
@@ -245,7 +250,7 @@ const updateLeadById = async (
     ...updatedData,
     passportExpiry: passportExpiry,
     visaCategory: String(updatedData.visaCategory).toLowerCase(),
-    leadHistory: JSON.stringify(leadHistory)
+    leadHistory: JSON.stringify(leadHistory),
   };
 
   const updatedLead = await connection("leads")
@@ -325,9 +330,10 @@ const updateLeadStatus = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
   }
 
-  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
+  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> =
+    [];
   if (lead.leadHistory) {
-    if (typeof lead.leadHistory === 'string') {
+    if (typeof lead.leadHistory === "string") {
       leadHistory = JSON.parse(lead.leadHistory);
     } else {
       leadHistory = lead.leadHistory;
@@ -338,19 +344,19 @@ const updateLeadStatus = async (
   const upcomingStatus = updateBody.leadStatus;
 
   leadHistory.push({
-    action: 'Status Updated',
+    action: "Status Updated",
     timestamp: new Date().toISOString(),
     details: {
       statusUpdatedBy: updateBody.userID,
       previousStatus: previousStatus,
-      upcomingStatus: upcomingStatus
-    }
+      upcomingStatus: upcomingStatus,
+    },
   });
 
   const { ...updatedData } = updateBody;
   const updatedDataWithoutID = {
     ...updatedData,
-    leadHistory: JSON.stringify(leadHistory)
+    leadHistory: JSON.stringify(leadHistory),
   };
 
   const updatedLead = await connection("leads")
@@ -364,7 +370,6 @@ const updateLeadStatus = async (
   return updatedLead[0];
 };
 
-
 const createVisaCategory = async (
   connection: Knex,
   visaCategory: VisaCategory,
@@ -374,7 +379,7 @@ const createVisaCategory = async (
     ...visaCategory,
     tenantID,
     id: uuidv4(),
-    category: visaCategory.category.toLowerCase()
+    category: visaCategory.category.toLowerCase(),
   };
   const [insertedVisaCategory] = await connection("visaCategory")
     .insert(updatedVisaCategory)
@@ -436,11 +441,17 @@ const deleteVisaCategory = async (
   return deletedCount;
 };
 
-const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string, userID: string): Promise<Lead[]> => {
-  const leadsWithIdsAndHistory = leads.map(lead => {
+const uploadLead = async (
+  connection: Knex,
+  leads: Lead[],
+  tenantId: string,
+  userID: string,
+): Promise<Lead[]> => {
+  const leadsWithIdsAndHistory = leads.map((lead) => {
     const { ...restOfLead } = lead;
-    const passportExpiry = restOfLead.passportExpiry === '' ? null : restOfLead.passportExpiry;
-    const userID = restOfLead.userID === '' ? null : restOfLead.userID;
+    const passportExpiry =
+      restOfLead.passportExpiry === "" ? null : restOfLead.passportExpiry;
+    const userID = restOfLead.userID === "" ? null : restOfLead.userID;
     const leadHistoryEntry = {
       action: "Created",
       timestamp: new Date().toISOString(),
@@ -458,7 +469,7 @@ const uploadLead = async (connection: Knex, leads: Lead[], tenantId: string, use
       passportExpiry: passportExpiry,
       userID: userID,
       visaCategory: String(restOfLead.visaCategory).toLowerCase(),
-      leadHistory: JSON.stringify([leadHistoryEntry])
+      leadHistory: JSON.stringify([leadHistoryEntry]),
     };
   });
 
@@ -589,33 +600,39 @@ const assignLead = async (
     if (user_id.length === 0) {
       await connection("lead_assignees").where({ lead_id }).delete();
       actionMessage = "Lead unassigned successfully";
-      notificationMessages = getAssignees.user_id.map(id => ({
+      notificationMessages = getAssignees.user_id.map((id) => ({
         user_id: id,
         message: `You have been unassigned to Lead ID: ${lead.firstname}`,
       }));
     } else {
       const existingUserIds = new Set(getAssignees.user_id);
       const userIdsToAdd = user_id.filter((id) => !existingUserIds.has(id));
-      const userIdsToRemove = getAssignees.user_id.filter((id) => !user_id.includes(id));
+      const userIdsToRemove = getAssignees.user_id.filter(
+        (id) => !user_id.includes(id),
+      );
 
       if (userIdsToAdd.length > 0) {
-        finalUserIds = Array.from(new Set([...getAssignees.user_id, ...userIdsToAdd]));
+        finalUserIds = Array.from(
+          new Set([...getAssignees.user_id, ...userIdsToAdd]),
+        );
         notificationMessages.push(
-          ...userIdsToAdd.map(id => ({
+          ...userIdsToAdd.map((id) => ({
             user_id: id,
-            message: `You have been assigned to Lead ID: ${lead.firstname}`
-          }))
+            message: `You have been assigned to Lead ID: ${lead.firstname}`,
+          })),
         );
       } else {
-        finalUserIds = getAssignees.user_id.filter(id => !userIdsToRemove.includes(id));
+        finalUserIds = getAssignees.user_id.filter(
+          (id) => !userIdsToRemove.includes(id),
+        );
       }
 
       if (userIdsToRemove.length > 0) {
         notificationMessages.push(
-          ...userIdsToRemove.map(id => ({
+          ...userIdsToRemove.map((id) => ({
             user_id: id,
-            message: `You have been unassigned to Lead: ${lead.firstname}`
-          }))
+            message: `You have been unassigned to Lead: ${lead.firstname}`,
+          })),
         );
       }
 
@@ -633,13 +650,14 @@ const assignLead = async (
   } else {
     await connection("lead_assignees").insert(leadAssignee).returning("*");
     actionMessage = "Lead assigned successfully";
-    notificationMessages = user_id.map(id => ({
+    notificationMessages = user_id.map((id) => ({
       user_id: id,
       message: `You have been assigned to Lead: ${lead.firstname}`,
     }));
   }
 
-  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> = [];
+  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> =
+    [];
   if (lead.leadHistory) {
     if (typeof lead.leadHistory === "string") {
       leadHistory = JSON.parse(lead.leadHistory);
@@ -663,18 +681,18 @@ const assignLead = async (
     user_id,
     lead_id,
     message,
-    icon: 'ri-user-add-line',
-    variant: 'info',
+    icon: "ri-user-add-line",
+    variant: "info",
   }));
 
   await connection("lead_notifications").insert(notifications);
 
   notificationMessages.forEach(({ user_id, message }) => {
-    io.to(`${user_id}`).emit('notification', {
+    io.to(`${user_id}`).emit("notification", {
       id: uuidv4(),
       message,
-      icon: 'ri-user-add-line',
-      variant: 'info',
+      icon: "ri-user-add-line",
+      variant: "info",
       created_at: new Date(),
     });
   });
@@ -682,10 +700,7 @@ const assignLead = async (
   return { message: actionMessage };
 };
 
-const getLeadHistory = async (
-  connection: Knex,
-  leadId: string,
-) => {
+const getLeadHistory = async (connection: Knex, leadId: string) => {
   const lead = await connection("leads")
     .select("leadHistory")
     .where({ id: leadId })
@@ -718,7 +733,9 @@ const getLeadHistory = async (
         entry.details.updatedBy = userMap[entry.details.updatedBy];
       }
       if (entry.details.assignedAgents) {
-        entry.details.assignedAgents = entry.details.assignedAgents.map((agentId: string) => userMap[agentId]);
+        entry.details.assignedAgents = entry.details.assignedAgents.map(
+          (agentId: string) => userMap[agentId],
+        );
       }
       if (entry.details.statusUpdatedBy) {
         entry.details.statusUpdatedBy = userMap[entry.details.statusUpdatedBy];
@@ -752,8 +769,10 @@ const createLeadNote = async (
 };
 
 const getLeadNotes = async (connection: Knex, leadId: string): Promise<any> => {
-
-  const leadNotes = await connection("lead_notes").where({ lead_id: leadId }).select("*").orderBy("created_at", "desc");
+  const leadNotes = await connection("lead_notes")
+    .where({ lead_id: leadId })
+    .select("*")
+    .orderBy("created_at", "desc");
 
   const updatedData = await Promise.all(
     leadNotes.map(async ({ user_id, ...rest }) => {
@@ -828,7 +847,6 @@ const uploadSingleDocument = async (
   tenantID: string,
   uploadType: string,
 ): Promise<void> => {
-
   const existingRecord = await connection("document_checklists")
     .where({ tenantID, leadID, uploadType })
     .first();
@@ -843,7 +861,7 @@ const uploadSingleDocument = async (
     }
 
     const documentExists = existingDocuments.some(
-      (existingDoc) => existingDoc.name === document.name
+      (existingDoc) => existingDoc.name === document.name,
     );
 
     if (!documentExists) {
@@ -877,7 +895,7 @@ const uploadSingleDocument = async (
 };
 
 const getAllLeadDocuments = async (connection: Knex) => {
-  return connection('document_checklists').select('tenantID', 'leadID');
+  return connection("document_checklists").select("tenantID", "leadID");
 };
 
 export default {

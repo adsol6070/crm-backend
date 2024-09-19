@@ -70,9 +70,6 @@ const connectionRequest = async (
   const tenantID = req.body.tenantID || req.user?.tenantID;
   const userEmail = req.body.email || req.user?.email;
 
-
-  console.table({ TenantID: tenantID, UserEmail: userEmail })
-
   try {
     const tenant = await findTenant(tenantID, userEmail);
 

@@ -29,6 +29,12 @@ const errorHandler = (
   _next: NextFunction,
 ) => {
   let { statusCode, message } = err;
+  if (config.env === "production" && !err.isOperational) {
+    statusCode = httpStatus.INTERNAL_SERVER_ERROR;
+    message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
+  }
+
+  res.locals.errorMessage = err.message;
 
   const response = {
     code: statusCode,

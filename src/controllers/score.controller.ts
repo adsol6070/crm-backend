@@ -5,7 +5,7 @@ import catchAsync from "../utils/catchAsync";
 
 const createScore = catchAsync(async (req: Request, res: Response) => {
     const connection = await connectionService.getCurrentTenantKnex();
-    const score = await scoreService.createScore(connection, req.body);
+    const score = await scoreService.createScore(connection, req.body, req.user?.tenantID);
     const message = "Score saved successfully.";
     res.status(httpStatus.CREATED).json({ score, message });
 });
