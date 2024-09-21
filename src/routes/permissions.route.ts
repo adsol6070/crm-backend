@@ -33,6 +33,14 @@ router.post(
 );
 
 router
+  .route("/deleteSelected")
+  .post(
+    auth("managePermissions"),
+    connectionRequest,
+    permissionsController.deleteSelectedRoles,
+  );
+
+router
   .route("/:permissionId")
   .get(
     auth("viewPermissions"),

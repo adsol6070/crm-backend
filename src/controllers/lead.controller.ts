@@ -64,7 +64,7 @@ interface Document {
 }
 
 const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
-  const baseUrl = "http://192.168.1.12:8000/uploads";
+  const baseUrl = "http://192.168.1.7:8000/uploads";
   return `${baseUrl}/${tenantID}/leadDocuments-${leadID}/${filename}`;
 };
 

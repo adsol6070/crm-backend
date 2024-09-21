@@ -1,5 +1,7 @@
 import { Knex } from "knex";
 import { v4 as uuidv4 } from "uuid";
+import ApiError from "../utils/ApiError";
+import httpStatus from "http-status";
 
 const createPermission = async (connection: Knex, permissionData: any) => {
   const newPermissionData = {
@@ -50,6 +52,20 @@ const deletePermissionById = async (connection: Knex, permissionId: string) => {
   await connection("permissions").where({ id: permissionId }).delete();
 };
 
+const deleteRoleByIds = async (connection: Knex, roleIds: string[]) => {
+  if (roleIds.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "No role IDs provided");
+  }
+
+  const deletedCount = await connection("permissions")
+    .whereIn("id", roleIds)
+    .delete();
+    
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No roles found to delete");
+  }  
+}
+
 export default {
   createPermission,
   getRoles,
@@ -58,4 +74,5 @@ export default {
   getAllPermissions,
   updatePermissionById,
   deletePermissionById,
+  deleteRoleByIds,
 };

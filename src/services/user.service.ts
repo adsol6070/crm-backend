@@ -150,7 +150,7 @@ const getUserImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!profileImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.12:8000/uploads";
+  const baseUrl = "http://192.168.1.7:8000/uploads";
   return `${baseUrl}/${tenantID}/User/${profileImage}`;
 };
 
@@ -258,8 +258,9 @@ const deleteUsersByIds = async (connection: Knex, userIds: string[]) => {
 
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No users found to delete");
-  }
-  
+  }  
+}
+
 const deleteAllUsers = async (connection: Knex) => {
   const deletedCount = await connection("users").del();
   await commonKnex("users").del();
