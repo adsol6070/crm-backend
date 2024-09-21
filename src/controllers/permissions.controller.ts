@@ -71,6 +71,17 @@ const getRoles = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.OK).json(roles);
 });
 
+const deleteSelectedRoles = catchAsync(async (req: Request, res: Response) => {
+  const { roleIds } = req.body;
+  if (!Array.isArray(roleIds) || roleIds.length === 0) {
+    return res.status(httpStatus.BAD_REQUEST).send("No role IDs provided");
+  }
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  await permissionsService.deleteRoleByIds(connection, roleIds);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
 export default {
   createPermission,
   getPermission,
@@ -79,4 +90,5 @@ export default {
   updatePermission,
   deletePermission,
   getRoles,
+  deleteSelectedRoles,
 };

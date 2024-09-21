@@ -150,7 +150,7 @@ const getUserImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!profileImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.12:8000/uploads";
+  const baseUrl = "http://192.168.1.7:8000/uploads";
   return `${baseUrl}/${tenantID}/User/${profileImage}`;
 };
 
