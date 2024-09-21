@@ -168,6 +168,17 @@ const deleteBlogByCategory = catchAsync(async (req: Request, res: Response) => {
   }
 });
 
+const deleteSelectedBlogCategory = catchAsync(async (req: Request, res: Response) => {
+  const { categoryIds } = req.body;
+
+  if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+    return res.status(httpStatus.BAD_REQUEST).send("No Category IDs provided");
+  }
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const deletedCount = await blogService.deleteCategoryByIds(connection, categoryIds);
+});
+
 export default {
   createBlog,
   getAllBlogs,
@@ -180,4 +191,5 @@ export default {
   getBlogCategoryById,
   updateBlogCategory,
   deleteBlogByCategory,
+  deleteSelectedBlogCategory,
 };

@@ -170,14 +170,17 @@ const deleteAllLeads = async (connection: Knex) => {
 };
 
 const getLeadDocumentsByIds = async (connection: Knex, leadIds: string[]) => {
-  return connection('document_checklists')
-    .select('tenantID', 'leadID')
-    .whereIn('leadID', leadIds);
+  return connection("document_checklists")
+    .select("tenantID", "leadID")
+    .whereIn("leadID", leadIds);
 };
 
-const deleteSelectedLeads = async (connection: Knex, leadIds: string[]): Promise<number> => {
+const deleteSelectedLeads = async (
+  connection: Knex,
+  leadIds: string[],
+): Promise<number> => {
   const deletedCount = await connection("leads")
-    .whereIn('id', leadIds)
+    .whereIn("id", leadIds)
     .delete();
 
   if (deletedCount === 0) {
@@ -186,17 +189,23 @@ const deleteSelectedLeads = async (connection: Knex, leadIds: string[]): Promise
   return deletedCount;
 };
 
-const getSpecificLeads = async (connection: Knex, userId: string): Promise<Lead[]> => {
-  return await connection('leads')
-    .leftJoin('lead_assignees', 'leads.id', 'lead_assignees.lead_id')
-    .select('leads.*')
-    .whereRaw('lead_assignees.user_id @> ?', [`{"${userId}"}`])
-    .orWhereRaw(`"leadHistory" @> ?`, [JSON.stringify([{ details: { createdBy: userId } }])])
-    .orderBy('leads.created_at', 'asc')
-    .distinct('leads.id');
+const getSpecificLeads = async (
+  connection: Knex,
+  userId: string,
+): Promise<Lead[]> => {
+  return await connection("leads")
+    .leftJoin("lead_assignees", "leads.id", "lead_assignees.lead_id")
+    .select("leads.*")
+    .whereRaw("lead_assignees.user_id @> ?", [`{"${userId}"}`])
+    .orWhereRaw(`"leadHistory" @> ?`, [
+      JSON.stringify([{ details: { createdBy: userId } }]),
+    ])
+    .orderBy("leads.created_at", "asc")
+    .distinct("leads.id");
 };
 
 const getLeadById = async (connection: Knex, leadId: string): Promise<Lead> => {
+  console.log("Get Lead By Id get called.", leadId);
   const lead = await connection("leads").where({ id: leadId }).first();
   if (!lead) {
     throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
@@ -325,55 +334,67 @@ const updateLeadStatus = async (
   leadId: string,
   updateBody: Partial<Lead>,
 ) => {
-  const lead = await getLeadById(connection, leadId);
-  if (!lead) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
-  }
+  try {
+    const lead = await getLeadById(connection, leadId);
 
-  let leadHistory: Array<{ action: string; timestamp: string; details?: any }> =
-    [];
-  if (lead.leadHistory) {
-    if (typeof lead.leadHistory === "string") {
-      leadHistory = JSON.parse(lead.leadHistory);
-    } else {
-      leadHistory = lead.leadHistory;
+    if (!lead) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
     }
+
+    let leadHistory: Array<{
+      action: string;
+      timestamp: string;
+      details?: any;
+    }> = [];
+
+    if (lead.leadHistory) {
+      leadHistory =
+        typeof lead.leadHistory === "string"
+          ? JSON.parse(lead.leadHistory)
+          : lead.leadHistory;
+    }
+
+    const previousStatus = lead.leadStatus;
+    const upcomingStatus = updateBody.leadStatus;
+
+    leadHistory.push({
+      action: "Status Updated",
+      timestamp: new Date().toISOString(),
+      details: {
+        statusUpdatedBy: updateBody.userID,
+        previousStatus: previousStatus,
+        upcomingStatus: upcomingStatus,
+      },
+    });
+
+    const updatedData = {
+      ...updateBody,
+      leadHistory: JSON.stringify(leadHistory),
+    };
+
+    const updatedLead = await connection("leads")
+      .where({ id: leadId })
+      .update(updatedData)
+      .returning("*");
+
+    if (updatedLead.length === 0) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Lead not found after update");
+    }
+
+    return updatedLead[0];
+  } catch (error) {
+    console.error("Error updating lead status:", error);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Error updating lead status",
+    );
   }
-
-  const previousStatus = lead.leadStatus;
-  const upcomingStatus = updateBody.leadStatus;
-
-  leadHistory.push({
-    action: "Status Updated",
-    timestamp: new Date().toISOString(),
-    details: {
-      statusUpdatedBy: updateBody.userID,
-      previousStatus: previousStatus,
-      upcomingStatus: upcomingStatus,
-    },
-  });
-
-  const { ...updatedData } = updateBody;
-  const updatedDataWithoutID = {
-    ...updatedData,
-    leadHistory: JSON.stringify(leadHistory),
-  };
-
-  const updatedLead = await connection("leads")
-    .where({ id: leadId })
-    .update(updatedDataWithoutID)
-    .returning("*");
-
-  if (updatedLead.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Lead not found after update");
-  }
-  return updatedLead[0];
 };
 
 const createVisaCategory = async (
   connection: Knex,
   visaCategory: VisaCategory,
-  tenantID?: string
+  tenantID?: string,
 ): Promise<VisaCategory> => {
   const updatedVisaCategory = {
     ...visaCategory,
@@ -439,6 +460,20 @@ const deleteVisaCategory = async (
     );
   }
   return deletedCount;
+};
+
+const deleteCategoryByIds = async (connection: Knex, categoryIds: string[]) => {
+  if (categoryIds.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "No category IDs provided");
+  }
+
+  const deletedCount = await connection("visaCategory")
+    .whereIn("id", categoryIds)
+    .delete();
+
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No category found to delete");
+  }
 };
 
 const uploadLead = async (
@@ -857,7 +892,7 @@ const uploadSingleDocument = async (
       existingDocuments = existingRecord.documents;
     } catch (error) {
       console.error("Failed to parse existing documents JSON:", error);
-      existingDocuments = []; 
+      existingDocuments = [];
     }
 
     const documentExists = existingDocuments.some(
@@ -930,5 +965,6 @@ export default {
   uploadSingleDocument,
   getAllLeadDocuments,
   getLeadDocumentsByIds,
-  deleteSelectedLeads
+  deleteSelectedLeads,
+  deleteCategoryByIds,
 };

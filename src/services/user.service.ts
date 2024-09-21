@@ -259,7 +259,8 @@ const deleteUsersByIds = async (connection: Knex, userIds: string[]) => {
   if (deletedCount === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No users found to delete");
   }
-  
+};
+
 const deleteAllUsers = async (connection: Knex) => {
   const deletedCount = await connection("users").del();
   await commonKnex("users").del();

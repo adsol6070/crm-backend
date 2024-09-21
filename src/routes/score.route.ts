@@ -19,6 +19,14 @@ router
     scoreController.createScore,
   );
 
+  router
+  .route("/deleteSelectedScores")
+  .post(
+    auth("Scores", Permission.DELETESELECTED),
+    connectionRequest,
+    scoreController.deleteSelectedScore,
+  );
+
 router
   .route("/:scoreId")
   .get(

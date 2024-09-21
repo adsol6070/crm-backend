@@ -38,6 +38,14 @@ router
     blogController.deleteBlogByCategory,
   );
 
+  router
+  .route("/deleteSelectedBlogCategories")
+  .post(
+    auth("Blogs", Permission.DELETESELECTED),
+    connectionRequest,
+    blogController.deleteSelectedBlogCategory,
+  );
+
 router
   .route("/")
   .get(

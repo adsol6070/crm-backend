@@ -38,10 +38,22 @@ const deleteAllScores = catchAsync(async (req: Request, res: Response) => {
     res.status(httpStatus.NO_CONTENT).json();
 });
 
+const deleteSelectedScore = catchAsync(async (req: Request, res: Response) => {
+    const { scoreIds } = req.body;
+  
+    if (!Array.isArray(scoreIds) || scoreIds.length === 0) {
+      return res.status(httpStatus.BAD_REQUEST).send("No score IDs provided");
+    }
+  
+    const connection = await connectionService.getCurrentTenantKnex();
+    const deletedCount = await scoreService.deleteScoresByIds(connection, scoreIds);
+  });
+
 export default {
     createScore,
     getScores,
     getScoreById,
     deleteScoreById,
     deleteAllScores,
+    deleteSelectedScore,
 };

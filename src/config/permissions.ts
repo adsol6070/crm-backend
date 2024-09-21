@@ -18,5 +18,6 @@ export enum LeadPermissions {
   DELETEALL = "DeleteAll",
   IMPORTBULK = "ImportBulk",
   DELETESELECTED= "DeleteSelected",
-  UPDATESELECETED= "UpdateSelected"
+  UPDATESELECETED= "UpdateSelected",
+  DELETESELECTEDCATEGORIES= "DeleteSelectedCategories"
 }

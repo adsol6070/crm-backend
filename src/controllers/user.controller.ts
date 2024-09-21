@@ -123,6 +123,7 @@ const deleteSelectedUsers = catchAsync(async (req: Request, res: Response) => {
 
   const connection = await connectionService.getCurrentTenantKnex();
   const deletedCount = await userService.deleteUsersByIds(connection, userIds);
+});
 
 const deleteAllUsers = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();

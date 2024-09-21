@@ -8,10 +8,17 @@ import upload from "../middlewares/multer";
 
 const router = express.Router();
 
+router
+  .route("/updateSelected")
+  .patch(
+    auth("Leads", LeadPermissions.UPDATESELECETED),
+    connectionRequest,
+    leadController.updateLeadsBulk,
+  );
 // Visa Category Routes
 router
   .route("/getVisaCategory")
-  .post(connectionRequest, leadController.getVisaCategory)
+  .post(connectionRequest, leadController.getVisaCategory);
 
 router
   .route("/visaCategory")
@@ -28,13 +35,16 @@ router
     leadController.deleteVisaCategoryById,
   );
 
-// Lead Routes
-router
-  .route("/createLead")
+  router
+  .route("/deleteSelectedCategories")
   .post(
+    auth("Visas", LeadPermissions.DELETESELECTEDCATEGORIES),
     connectionRequest,
-    leadController.createLead,
-  )
+    leadController.deleteSelectedVisaCategories,
+  );
+
+// Lead Routes
+router.route("/createLead").post(connectionRequest, leadController.createLead);
 
 router
   .route("/")
@@ -78,14 +88,6 @@ router
     auth("Leads", LeadPermissions.DELETESELECTED),
     connectionRequest,
     leadController.deleteSelectedLeads,
-  );
-
-router
-  .route("/updateSelected")
-  .post(
-    auth("Leads", LeadPermissions.UPDATESELECETED),
-    connectionRequest,
-    leadController.updateLeadsBulk,
   );
 
 router
@@ -179,7 +181,7 @@ router
     auth("manageLeads"),
     connectionRequest,
     leadController.getSingleDocumentURL,
-  )
+  );
 
 router
   .route("/uploadSingleDocument")
@@ -188,7 +190,7 @@ router
     upload.single("documents"),
     connectionRequest,
     leadController.uploadSingleDocument,
-  )
+  );
 
 router
   .route("/leadStatus/:leadId")

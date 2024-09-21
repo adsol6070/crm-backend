@@ -204,6 +204,20 @@ const deleteBlogCategory = async (
   return deletedCount;
 };
 
+const deleteCategoryByIds = async (connection: Knex, categoryIds: string[]) => {
+  if (categoryIds.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "No category IDs provided");
+  }
+
+  const deletedCount = await connection("blogCategory")
+    .whereIn("id", categoryIds)
+    .delete();
+
+  if (deletedCount === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No category found to delete");
+  }
+};
+
 export default {
   createBlog,
   getAllBlogs,
@@ -216,4 +230,5 @@ export default {
   getBlogCategoryById,
   updateBlogByCategory,
   deleteBlogCategory,
+  deleteCategoryByIds,
 };
