@@ -177,6 +177,7 @@ const deleteSelectedBlogCategory = catchAsync(async (req: Request, res: Response
 
   const connection = await connectionService.getCurrentTenantKnex();
   const deletedCount = await blogService.deleteCategoryByIds(connection, categoryIds);
+  res.status(httpStatus.NO_CONTENT).send();
 });
 
 export default {

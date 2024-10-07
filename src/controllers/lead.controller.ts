@@ -64,7 +64,7 @@ interface Document {
 }
 
 const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
-  const baseUrl = "http://192.168.1.7:8000/uploads";
+  const baseUrl = "http://192.168.1.20:8000/uploads";
   return `${baseUrl}/${tenantID}/leadDocuments-${leadID}/${filename}`;
 };
 
@@ -313,6 +313,7 @@ const deleteSelectedVisaCategories = catchAsync(async (req: Request, res: Respon
 
   const connection = await connectionService.getCurrentTenantKnex();
   const deletedCount = await leadService.deleteCategoryByIds(connection, categoryIds);
+  res.status(httpStatus.NO_CONTENT).send();
 });
 
 const uploadLead = catchAsync(async (req: Request, res: Response) => {

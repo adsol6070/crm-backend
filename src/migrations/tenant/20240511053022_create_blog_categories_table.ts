@@ -7,7 +7,7 @@ export async function up(knex: Knex): Promise<void> {
       function (table: Knex.CreateTableBuilder) {
         table.uuid("id").primary();
         table.uuid("tenantID").notNullable();
-        table.string("category").notNullable();
+        table.string("category").notNullable().unique();
         table.timestamps(true, true);
       },
     );

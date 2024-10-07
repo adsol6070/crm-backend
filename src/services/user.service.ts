@@ -26,6 +26,7 @@ interface User {
   isEmailVerified?: boolean;
   role?: string;
   last_active?: string;
+  profileImageUrl?: string;
 }
 
 type SafeUser = Omit<User, "password" | "created_at" | "updated_at">;
@@ -150,7 +151,7 @@ const getUserImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!profileImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.7:8000/uploads";
+  const baseUrl = "http://192.168.1.20:8000/uploads";
   return `${baseUrl}/${tenantID}/User/${profileImage}`;
 };
 
@@ -180,7 +181,8 @@ const updateUserById = async (
   updateBody: Partial<User>,
   file?: UploadedFile,
 ) => {
-  const { uploadType, last_active, ...filteredUpdateBody } = updateBody;
+  console.log(updateBody)
+  const { uploadType, last_active, profileImageUrl, ...filteredUpdateBody } = updateBody;
   const user = await getUserByID(connection, userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
