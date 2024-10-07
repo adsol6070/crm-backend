@@ -3,6 +3,7 @@ import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import config from "../config/config";
 
 interface Blog {
   id?: string;
@@ -39,7 +40,7 @@ const createBlog = async (
   connection: Knex,
   blog: Blog,
   file?: UploadedFile,
-  tenantID?: string
+  tenantID?: string,
 ): Promise<Blog> => {
   const { uploadType, ...blogWithoutUploadType } = blog;
   const blogData: Blog = {
@@ -60,7 +61,7 @@ const getBlogImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!blogImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.7:8000/uploads";
+  const baseUrl = `${config.baseUrl}/uploads`;
   return `${baseUrl}/${tenantID}/Blog/${blogImage}`;
 };
 
@@ -77,7 +78,7 @@ const getBlogById = async (connection: Knex, blogId: string): Promise<Blog> => {
   const blogWithImageUrl = {
     ...blog,
     blogImageUrl: getBlogImageUrl(blog.blogImage, blog.tenantID),
-  }
+  };
 
   if (!blogWithImageUrl) {
     throw new ApiError(httpStatus.NOT_FOUND, "Blog not found");
@@ -90,15 +91,15 @@ const getBlogImageById = async (connection: Knex, id: string) => {
   if (!blog) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Blog not found");
   }
-    const image = path.join(
-      __dirname,
-      "..",
-      "uploads",
-      blog.tenantID as string,
-      "Blog",
-      blog.blogImage,
-    );
-    return image;
+  const image = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    blog.tenantID as string,
+    "Blog",
+    blog.blogImage,
+  );
+  return image;
 };
 
 const updateBlogById = async (
@@ -137,7 +138,7 @@ const deleteBlogById = async (
 const createBlogCategory = async (
   connection: Knex,
   blogCategory: BlogCategory,
-  tenantID?: string
+  tenantID?: string,
 ): Promise<BlogCategory> => {
   const updatedBlogCategory = {
     ...blogCategory,

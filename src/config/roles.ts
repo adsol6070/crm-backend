@@ -18,8 +18,9 @@ const allRoles: RoleRights = {
     Permissions.MANAGE_USERS,
     Permissions.READ_BLOGS,
     Permissions.MANAGE_BLOGS,
+    
   ],
-  superAdmin: [
+  super_admin: [
     Permissions.READ_USERS,
     Permissions.MANAGE_USERS,
     Permissions.MANAGE_SETTINGS,

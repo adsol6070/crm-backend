@@ -10,6 +10,7 @@ dotenv.config({ path: path.join(__dirname, `../../.${envFile}`) });
 
 // Define the expected environment variables and their types
 interface EnvironmentVariables {
+  BASE_URL: string;
   NODE_ENV: "production" | "development" | "test";
   PORT: number;
   DB_CLIENT: string;
@@ -35,6 +36,7 @@ interface EnvironmentVariables {
 
 // Define the schema for validating environment variables
 const envVarsSchema = Joi.object<EnvironmentVariables>({
+  BASE_URL: Joi.string(),
   NODE_ENV: Joi.string().valid("production", "development", "test").required(),
   PORT: Joi.number().default(8000),
   DB_CLIENT: Joi.string().required().description("Database client"),
@@ -82,6 +84,7 @@ const frontendUrlsArray = envVars.FRONTEND_URLS.split(",");
 
 // Create the configuration object
 const config = {
+  baseUrl: envVars.BASE_URL,
   env: envVars.NODE_ENV,
   port: envVars.PORT,
   postgres: {

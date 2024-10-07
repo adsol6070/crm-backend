@@ -6,6 +6,7 @@ import ApiError from "../utils/ApiError";
 import archiver from "archiver";
 import path from "path";
 import fs from "fs";
+import config from "../config/config";
 
 interface Lead {
   id: string;
@@ -64,7 +65,7 @@ interface Document {
 }
 
 const getDocumentUrl = (filename: string, tenantID: string, leadID: string) => {
-  const baseUrl = "http://192.168.1.7:8000/uploads";
+  const baseUrl = `${config.baseUrl}/uploads`;
   return `${baseUrl}/${tenantID}/leadDocuments-${leadID}/${filename}`;
 };
 
