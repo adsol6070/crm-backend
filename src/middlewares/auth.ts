@@ -26,7 +26,7 @@ const verifyCallback =
       return resolve();
     }
 
-    if (user.role === "superAdmin") {
+    if (user.role === "super_admin") {
       return resolve();
     }
 

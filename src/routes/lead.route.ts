@@ -35,7 +35,7 @@ router
     leadController.deleteVisaCategoryById,
   );
 
-  router
+router
   .route("/deleteSelectedCategories")
   .post(
     auth("Visas", LeadPermissions.DELETESELECTEDCATEGORIES),
@@ -63,6 +63,14 @@ router
     connectionRequest,
     leadController.deleteAllLeads,
   );
+
+router
+  .route("/downloadFullCsv/:category")
+  .get(auth("manageLeads"), connectionRequest, leadController.downloadCsv)
+
+router
+  .route("/getDocumentStatus")
+  .get(auth("manageLeads"), connectionRequest, leadController.documentStatus)
 
 router
   .route("/:leadId")

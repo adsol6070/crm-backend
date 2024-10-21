@@ -6,6 +6,7 @@ import commonService from "./common.service";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { commonKnex } from "../config/database";
+import config from "../config/config";
 
 interface DatabaseError extends Error {
   code?: string;
@@ -151,7 +152,7 @@ const getUserImageUrl = (
   tenantID: string | undefined,
 ): string => {
   if (!profileImage || !tenantID) return "";
-  const baseUrl = "http://192.168.1.20:8000/uploads";
+  const baseUrl = `${config.baseUrl}/uploads`;
   return `${baseUrl}/${tenantID}/User/${profileImage}`;
 };
 

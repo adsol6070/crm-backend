@@ -4,6 +4,7 @@ import httpStatus from "http-status";
 import { v4 as uuidv4 } from "uuid";
 import commonService from "./common.service";
 import { io } from "..";
+import { Parser } from "json2csv";
 
 interface Lead {
   id: string;
@@ -160,6 +161,19 @@ const getAllLeads = async (connection: Knex): Promise<Lead[]> => {
   return await connection("leads").select("*").orderBy("created_at", "asc");
 };
 
+const downloadCsv = async (connection: Knex, visaCategory: string) => {
+  let query = connection("leads").select("*").orderBy("created_at", "asc");
+
+  if (visaCategory != "All") {
+    query = query.where("visaCategory", visaCategory); 
+  }
+
+  const leads = await query;
+  const json2CsvParser = new Parser();
+  const data = json2CsvParser.parse(leads)
+  return data
+};
+
 const deleteAllLeads = async (connection: Knex) => {
   const deletedCount = await connection("leads").select("*").delete();
 
@@ -205,7 +219,6 @@ const getSpecificLeads = async (
 };
 
 const getLeadById = async (connection: Knex, leadId: string): Promise<Lead> => {
-  console.log("Get Lead By Id get called.", leadId);
   const lead = await connection("leads").where({ id: leadId }).first();
   if (!lead) {
     throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
@@ -492,7 +505,9 @@ const uploadLead = async (
       timestamp: new Date().toISOString(),
       details: { createdBy: userID },
     };
-
+    const leadHistoryData = restOfLead.leadHistory == undefined ? JSON.stringify([leadHistoryEntry]) : restOfLead.leadHistory
+    console.log("Lead History 1", restOfLead.leadHistory)
+    console.log("Lead History", leadHistoryData)
     return {
       ...restOfLead,
       id: uuidv4(),
@@ -504,7 +519,7 @@ const uploadLead = async (
       passportExpiry: passportExpiry,
       userID: userID,
       visaCategory: String(restOfLead.visaCategory).toLowerCase(),
-      leadHistory: JSON.stringify([leadHistoryEntry]),
+      leadHistory: leadHistoryData,
     };
   });
 
@@ -613,6 +628,11 @@ const getAssigneById = async (
   lead_id: string,
 ): Promise<LeadAssignee> => {
   return await connection("lead_assignees").where({ lead_id }).first();
+};
+
+const getDocumentStatus = async (connection: Knex) => {
+  const uploadedDocument = await connection("document_checklists").select("leadID", "documents");
+  return uploadedDocument
 };
 
 const assignLead = async (
@@ -944,6 +964,8 @@ export default {
   updateLeadStatus,
   createVisaCategory,
   getAllVisaCategory,
+  downloadCsv,
+  getDocumentStatus,
   getVisaCategoryById,
   updateVisaByCategory,
   deleteVisaCategory,
