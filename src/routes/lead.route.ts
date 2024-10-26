@@ -135,8 +135,6 @@ router
   .route("/importLeads")
   .post(
     auth("Leads", LeadPermissions.IMPORTBULK),
-    upload.single("leadFile"),
-    parseFile,
     connectionRequest,
     leadController.uploadLead,
   );

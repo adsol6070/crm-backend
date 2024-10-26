@@ -506,8 +506,7 @@ const uploadLead = async (
       details: { createdBy: userID },
     };
     const leadHistoryData = restOfLead.leadHistory == undefined ? JSON.stringify([leadHistoryEntry]) : restOfLead.leadHistory
-    console.log("Lead History 1", restOfLead.leadHistory)
-    console.log("Lead History", leadHistoryData)
+    
     return {
       ...restOfLead,
       id: uuidv4(),
@@ -529,6 +528,7 @@ const uploadLead = async (
 
   return insertedLeads;
 };
+
 
 const getLeadDocumentsById = async (
   connection: Knex,

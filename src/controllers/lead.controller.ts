@@ -319,13 +319,13 @@ const deleteSelectedVisaCategories = catchAsync(async (req: Request, res: Respon
 
 const uploadLead = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  const parsedData: Lead[] = req.body.parsedData as Lead[];
-  if (!Array.isArray(parsedData) || parsedData.length === 0) {
+  const importedData: Lead[] = req.body.importedData as Lead[];
+  if (!Array.isArray(importedData) || importedData.length === 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, "No valid data to import");
   }
   const uploadLeads = await leadService.uploadLead(
     connection,
-    parsedData,
+    importedData,
     req.body.tenantID,
     req.body.userID,
   );
