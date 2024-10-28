@@ -126,14 +126,15 @@ const createLead = async (
   lead: Lead,
   user: any,
 ): Promise<Lead> => {
-  // const leadEmail = await commonService.isEmailTaken(connection, "leads", lead.email)
-  // if (leadEmail) {
-  //   throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
-  // }
-  const { ...leadData } = lead;
+  const leadEmail = await commonService.isEmailTaken(connection, "leads", lead.email)
+  if (leadEmail) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+  }
+  const { tenantID, ...leadData } = lead;
   const passportExpiry =
     leadData.passportExpiry === "" ? null : leadData.passportExpiry;
   const userID = leadData.userID === "By QR Code" ? null : leadData.userID;
+  const tenID = lead.tenantID == undefined ? user.tenantID : lead.tenantID;
   const leadHistoryEntry = {
     action: "Created",
     timestamp: new Date().toISOString(),
@@ -143,7 +144,7 @@ const createLead = async (
   const correctedData = {
     ...leadData,
     id: uuidv4(),
-    tenantID: user.tenantID,
+    tenantID: tenID,
     userID,
     visaCategory: String(leadData.visaCategory).toLowerCase(),
     leadSource: String(leadData.leadSource).toLowerCase(),
@@ -528,7 +529,6 @@ const uploadLead = async (
 
   return insertedLeads;
 };
-
 
 const getLeadDocumentsById = async (
   connection: Knex,
