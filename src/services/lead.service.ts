@@ -233,9 +233,15 @@ const updateLeadById = async (
   updateBody: Partial<Lead>,
 ) => {
   const lead = await getLeadById(connection, leadId);
-  // console.log("updated lead previous data", lead)
   if (!lead) {
     throw new ApiError(httpStatus.NOT_FOUND, "Lead not found");
+  }
+  
+  if (updateBody.email && updateBody.email !== lead.email) {
+    const leadEmailTaken = await commonService.isEmailTaken(connection, "leads", updateBody.email);
+    if (leadEmailTaken) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    }
   }
 
   const updates = Object.entries(updateBody).reduce<Partial<Lead>>(
@@ -498,8 +504,7 @@ const uploadLead = async (
 ): Promise<Lead[]> => {
   const leadsWithIdsAndHistory = leads.map((lead) => {
     const { ...restOfLead } = lead;
-    const passportExpiry =
-      restOfLead.passportExpiry === "" ? null : restOfLead.passportExpiry;
+    const passportExpiry = restOfLead.passportExpiry === "" ? null : restOfLead.passportExpiry;
     const userID = restOfLead.userID === "" ? null : restOfLead.userID;
     const leadHistoryEntry = {
       action: "Created",

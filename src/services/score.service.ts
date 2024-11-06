@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 
 interface Score {
   id?: string;
+  tenantID?: string;
   name: string;
   email: string;
   phone: string;
@@ -21,6 +22,7 @@ const createScore = async (
 ): Promise<Score> => {
   const scoreData: Score = {
     ...score,
+    tenantID: tenantID,
     id: uuidv4(),
   };
 

@@ -9,6 +9,7 @@ import chatRoute from "./chat.route";
 import scoreRoute from "./score.route"
 import reportRoute from "./reports.route"
 import checklistRoute from "./checklist.route"
+import taskRoute from "./task.route"
 
 const router = express.Router();
 const defaultRoutes = [
@@ -51,6 +52,10 @@ const defaultRoutes = [
   {
     path: "/reports",
     route: reportRoute,
+  },
+  {
+    path: "/task",
+    route: taskRoute,
   },
 ];
 
