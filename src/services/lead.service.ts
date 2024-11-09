@@ -821,7 +821,6 @@ const createLeadNote = async (
     id: uuidv4(),
   };
 
-  console.log("lead note data", correctedData);
   const [insertedLeadNote] = await connection("lead_notes")
     .insert(correctedData)
     .returning("*");

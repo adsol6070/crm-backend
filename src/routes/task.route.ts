@@ -7,7 +7,7 @@ import { Permission } from "../config/permissions";
 const router = express.Router();
 
 router
-	.route("/")
+	.route("/:boardID")
 	.get(
 		auth("Task", Permission.READ),
 		connectionRequest,
@@ -17,6 +17,11 @@ router
 		auth("Task", Permission.CREATE),
 		connectionRequest,
 		taskController.createTask,
+	)
+	.delete(
+		auth("Task", Permission.DELETE),
+		connectionRequest,
+		taskController.deleteTasks,
 	);
 
 

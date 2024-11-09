@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 interface Task {
 	id?: string;
 	tenantID?: string;
+	user_id?: string;
+	board_id?: string;
 	taskStatus: string;
 	taskTitle: string;
 	taskDescription: string;
@@ -18,10 +20,14 @@ const createTask = async (
 	connection: Knex,
 	task: Task,
 	tenantID?: string,
+	userID?: string,
+	boardID?: string,
 ): Promise<Task> => {
 	const taskData: Task = {
 		...task,
 		tenantID: tenantID,
+		user_id: userID,
+		board_id: boardID,
 		id: uuidv4(),
 	};
 
@@ -74,10 +80,22 @@ const deleteTaskById = async (
 	return deletedCount;
 };
 
+const deleteTasks = async (
+	connection: Knex,
+): Promise<number> => {
+	const deletedCount = await connection("todoTask").delete();
+
+	if (deletedCount === 0) {
+		throw new ApiError(httpStatus.NOT_FOUND, "No tasks found to delete");
+	}
+	return deletedCount;
+};
+
 export default {
 	createTask,
 	getTasks,
 	getTaskById,
 	updateTaskById,
 	deleteTaskById,
+	deleteTasks,
 };
