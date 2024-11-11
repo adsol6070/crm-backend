@@ -11,9 +11,11 @@ const createTask = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.CREATED).json({ task, message });
 });
 
-const getTasks = catchAsync(async (req: Request, res: Response) => {
+const getTasksByBoard = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  const tasks = await taskService.getTasks(connection);
+  const boardId = req.params.boardID;
+  console.log("BoardID:", boardId);
+  const tasks = await taskService.getTasksByBoard(connection, boardId); 
   res.status(httpStatus.OK).json(tasks);
 });
 
@@ -57,7 +59,7 @@ const deleteTasks = catchAsync(async (req: Request, res: Response) => {
 
 export default {
   createTask,
-  getTasks,
+  getTasksByBoard,
   getTaskById,
   deleteTaskById,
   updateTaskById,

@@ -7,40 +7,46 @@ import { Permission } from "../config/permissions";
 const router = express.Router();
 
 router
-	.route("/")
-	.get(
-		auth("Board", Permission.READ),
-		connectionRequest,
-		boardController.getBoards,
-	)
-	.post(
-		auth("Board", Permission.CREATE),
-		connectionRequest,
-		boardController.createBoard,
-	)
-	.delete(
-		auth("Board", Permission.DELETE),
-		connectionRequest,
-		boardController.deleteBoards,
-	);
+  .route("/")
+  .get(
+    auth("Board", Permission.READ),
+    connectionRequest,
+    boardController.getBoards,
+  )
+  .post(
+    auth("Board", Permission.CREATE),
+    connectionRequest,
+    boardController.createBoard,
+  )
+  .delete(
+    auth("Board", Permission.DELETE),
+    connectionRequest,
+    boardController.deleteBoards,
+  );
 
+router.patch(
+  "/order",
+  auth(),
+  connectionRequest,
+  boardController.changeBoardOrder,
+);
 
 router
-	.route("/:boardID")
-	.get(
-		auth("Board", Permission.READ),
-		connectionRequest,
-		boardController.getBoardById,
-	)
-	.patch(
-		auth("Board", Permission.UPDATE),
-		connectionRequest,
-		boardController.updateBoardById,
-	  )
-	.delete(
-		auth("Board", Permission.DELETE),
-		connectionRequest,
-		boardController.deleteBoardById,
-	);
+  .route("/:boardID")
+  .get(
+    auth("Board", Permission.READ),
+    connectionRequest,
+    boardController.getBoardById,
+  )
+  .patch(
+    auth("Board", Permission.UPDATE),
+    connectionRequest,
+    boardController.updateBoardById,
+  )
+  .delete(
+    auth("Board", Permission.DELETE),
+    connectionRequest,
+    boardController.deleteBoardById,
+  );
 
 export default router;

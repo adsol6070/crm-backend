@@ -11,7 +11,7 @@ router
 	.get(
 		auth("Task", Permission.READ),
 		connectionRequest,
-		taskController.getTasks,
+		taskController.getTasksByBoard,
 	)
 	.post(
 		auth("Task", Permission.CREATE),

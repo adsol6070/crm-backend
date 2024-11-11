@@ -2,10 +2,16 @@ import { Request, Response } from "express";
 import { boardService, connectionService } from "../services";
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
+import ApiError from "../utils/ApiError";
 
 const createBoard = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
-  const board = await boardService.createBoard(connection, req.body, req.user?.tenantID, req.user?.id);
+  const board = await boardService.createBoard(
+    connection,
+    req.body,
+    req.user?.tenantID,
+    req.user?.id,
+  );
   const message = "Board created successfully.";
   res.status(httpStatus.CREATED).json({ board, message });
 });
@@ -35,10 +41,37 @@ const updateBoardById = catchAsync(async (req: Request, res: Response) => {
   if (updatedBoard) {
     res.status(httpStatus.OK).send(updatedBoard);
   } else {
-    res
-      .status(httpStatus.NOT_FOUND)
-      .send({ message: "Board not found" });
+    res.status(httpStatus.NOT_FOUND).send({ message: "Board not found" });
   }
+});
+
+const changeBoardOrder = catchAsync(async (req: Request, res: Response) => {
+  console.log("Request Body:", req.body);
+  const { orderedBoards } = req.body;
+
+  if (!Array.isArray(orderedBoards) || orderedBoards.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid ordered boards data");
+  }
+
+  // Ensure each board object contains a valid boardId and order
+  orderedBoards.forEach((item: any) => {
+    if (!item.boardId || typeof item.order !== "number") {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Invalid boardId or order in array",
+      );
+    }
+  });
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const updatedBoards = await boardService.updateBoardOrder(
+    connection,
+    orderedBoards,
+  );
+
+  res
+    .status(httpStatus.OK)
+    .json({ updatedBoards, message: "Board order updated successfully." });
 });
 
 const deleteBoardById = catchAsync(async (req: Request, res: Response) => {
@@ -60,5 +93,6 @@ export default {
   getBoardById,
   deleteBoardById,
   updateBoardById,
+  changeBoardOrder,
   deleteBoards,
 };
