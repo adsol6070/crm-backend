@@ -18,11 +18,6 @@ router
 		connectionRequest,
 		taskController.createTask,
 	)
-	.delete(
-		auth("Task", Permission.DELETE),
-		connectionRequest,
-		taskController.deleteTasks,
-	);
 
 
 router

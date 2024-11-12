@@ -80,20 +80,10 @@ const deleteTaskById = async (
   return deletedCount;
 };
 
-const deleteTasks = async (connection: Knex): Promise<number> => {
-  const deletedCount = await connection("todoTask").delete();
-
-  if (deletedCount === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, "No tasks found to delete");
-  }
-  return deletedCount;
-};
-
 export default {
   createTask,
   getTasksByBoard,
   getTaskById,
   updateTaskById,
   deleteTaskById,
-  deleteTasks,
 };

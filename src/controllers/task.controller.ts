@@ -46,14 +46,9 @@ const updateTaskById = catchAsync(async (req: Request, res: Response) => {
 
 const deleteTaskById = catchAsync(async (req: Request, res: Response) => {
   const taskId = req.params.taskId;
+  console.log("taskid ", taskId)
   const connection = await connectionService.getCurrentTenantKnex();
   const task = await taskService.deleteTaskById(connection, taskId);
-  res.status(httpStatus.NO_CONTENT).json();
-});
-
-const deleteTasks = catchAsync(async (req: Request, res: Response) => {
-  const connection = await connectionService.getCurrentTenantKnex();
-  const task = await taskService.deleteTasks(connection);
   res.status(httpStatus.NO_CONTENT).json();
 });
 
@@ -63,5 +58,4 @@ export default {
   getTaskById,
   deleteTaskById,
   updateTaskById,
-  deleteTasks,
 };
