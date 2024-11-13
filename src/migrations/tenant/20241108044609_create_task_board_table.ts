@@ -11,6 +11,7 @@ export async function up(knex: Knex): Promise<void> {
       .references("id")
       .inTable("users")
       .onDelete("CASCADE");
+    table.string("boardColor").notNullable();
     table.string("boardTitle").notNullable();
     table.text("boardDescription").notNullable();
 	table.integer('order').defaultTo(0);
