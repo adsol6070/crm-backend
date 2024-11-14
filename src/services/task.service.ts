@@ -16,6 +16,15 @@ interface Task {
   updatedAt?: Date;
 }
 
+interface TaskColumn {
+  id?: string;
+  tenantID?: string;
+  board_id?: string;
+  taskStatus:  { name: string }[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 const createTask = async (
   connection: Knex,
   task: Task,
@@ -80,10 +89,30 @@ const deleteTaskById = async (
   return deletedCount;
 };
 
+const createTaskColumn = async (
+  connection: Knex,
+  taskColumn: { name: string }[],
+  tenantID?: string,
+  boardID?: string,
+): Promise<Task> => {
+  const taskColumnData: TaskColumn = {
+    taskStatus: taskColumn,
+    tenantID: tenantID,
+    board_id: boardID,
+    id: uuidv4(),
+  };
+
+  const [insertedResult] = await connection("todoTaskColumn")
+    .insert(taskColumnData)
+    .returning("*");
+  return insertedResult;
+};
+
 export default {
   createTask,
   getTasksByBoard,
   getTaskById,
   updateTaskById,
   deleteTaskById,
+  createTaskColumn,
 };
