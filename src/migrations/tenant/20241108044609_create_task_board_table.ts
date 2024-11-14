@@ -14,7 +14,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string("boardColor").notNullable();
     table.string("boardTitle").notNullable();
     table.text("boardDescription").notNullable();
-	table.integer('order').defaultTo(0);
+    table.integer("order").defaultTo(0);
     table.timestamps(true, true);
   });
 }
