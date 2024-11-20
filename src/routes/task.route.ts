@@ -24,13 +24,20 @@ router
 	.get(
 		auth("Task", Permission.READ),
 		connectionRequest,
-		taskController.getTasksByBoard,
+		taskController.getTasksColumns,
 	)
 	.post(
 		auth("Task", Permission.CREATE),
 		connectionRequest,
 		taskController.createTaskColumn,
 	)
+
+router.patch(
+	"/order/:boardId",
+	auth(),
+	connectionRequest,
+	taskController.changeTaskOrder,
+);
 
 router
 	.route("/:taskId")

@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
 		  .references("id")
 		  .inTable("todoBoard")
 		  .onDelete("CASCADE");
-		table.string("taskStatus").notNullable();
+		table.jsonb("taskStatus");
 		table.timestamps(true, true);
 	});
 }
