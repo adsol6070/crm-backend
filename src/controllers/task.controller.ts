@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { taskService, connectionService } from "../services";
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
+import ApiError from "../utils/ApiError";
 
 const createTask = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
@@ -54,10 +55,59 @@ const deleteTaskById = catchAsync(async (req: Request, res: Response) => {
   res.status(httpStatus.NO_CONTENT).json();
 });
 
+const createTaskColumn = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const boardId = req.params.boardID;
+  const taskColumn = await taskService.createTaskColumn(connection, req.body, req.user?.tenantID, boardId);
+  const message = "Task column created successfully.";
+  res.status(httpStatus.CREATED).json({ taskColumn, message });
+});
+
+const getTasksColumns = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const boardId = req.params.boardID;
+  const taskColumns = await taskService.getTaskColumns(connection, boardId);
+  res.status(httpStatus.OK).json(taskColumns);
+});
+
+const changeTaskOrder = catchAsync(async (req: Request, res: Response) => {
+  console.log("Request Body:", req.body);
+  const { orderedTasks } = req.body;
+  const boardID = req.params.boardId;
+
+  if (!Array.isArray(orderedTasks) || orderedTasks.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid ordered tasks data");
+  }
+
+  // Ensure each task object contains a valid taskId and order
+  orderedTasks.forEach((item: any) => {
+    if (!item.taskId || typeof item.order !== "number") {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Invalid taskId or order in array",
+      );
+    }
+  });
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const updatedTasks = await taskService.updateTaskOrder(
+    connection,
+    boardID,
+    orderedTasks,
+  );
+
+  res
+    .status(httpStatus.OK)
+    .json({ updatedTasks, message: "Task order updated successfully." });
+});
+
 export default {
   createTask,
   getTasksByBoard,
   getTaskById,
   deleteTaskById,
   updateTaskById,
+  createTaskColumn,
+  getTasksColumns,
+  changeTaskOrder,
 };

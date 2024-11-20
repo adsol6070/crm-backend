@@ -9,17 +9,17 @@ const router = express.Router();
 router
   .route("/")
   .get(
-    auth("Board", Permission.READ),
+    auth("Task", Permission.READ),
     connectionRequest,
     boardController.getBoards,
   )
   .post(
-    auth("Board", Permission.CREATE),
+    auth("Task", Permission.CREATE),
     connectionRequest,
     boardController.createBoard,
   )
   .delete(
-    auth("Board", Permission.DELETE),
+    auth("Task", Permission.DELETE),
     connectionRequest,
     boardController.deleteBoards,
   );
@@ -34,17 +34,17 @@ router.patch(
 router
   .route("/:boardID")
   .get(
-    auth("Board", Permission.READ),
+    auth("Task", Permission.READ),
     connectionRequest,
     boardController.getBoardById,
   )
   .patch(
-    auth("Board", Permission.UPDATE),
+    auth("Task", Permission.UPDATE),
     connectionRequest,
     boardController.updateBoardById,
   )
   .delete(
-    auth("Board", Permission.DELETE),
+    auth("Task", Permission.DELETE),
     connectionRequest,
     boardController.deleteBoardById,
   );

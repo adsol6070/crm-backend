@@ -18,7 +18,27 @@ router
 		connectionRequest,
 		taskController.createTask,
 	)
-	
+
+router
+	.route("/taskColumn/:boardID")
+	.get(
+		auth("Task", Permission.READ),
+		connectionRequest,
+		taskController.getTasksColumns,
+	)
+	.post(
+		auth("Task", Permission.CREATE),
+		connectionRequest,
+		taskController.createTaskColumn,
+	)
+
+router.patch(
+	"/order/:boardId",
+	auth(),
+	connectionRequest,
+	taskController.changeTaskOrder,
+);
+
 router
 	.route("/:taskId")
 	.get(
@@ -30,7 +50,7 @@ router
 		auth("Task", Permission.UPDATE),
 		connectionRequest,
 		taskController.updateTaskById,
-	  )
+	)
 	.delete(
 		auth("Task", Permission.DELETE),
 		connectionRequest,
