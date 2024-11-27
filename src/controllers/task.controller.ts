@@ -58,7 +58,12 @@ const deleteTaskById = catchAsync(async (req: Request, res: Response) => {
 const createTaskColumn = catchAsync(async (req: Request, res: Response) => {
   const connection = await connectionService.getCurrentTenantKnex();
   const boardId = req.params.boardID;
-  const taskColumn = await taskService.createTaskColumn(connection, req.body, req.user?.tenantID, boardId);
+  const taskColumn = await taskService.createTaskColumn(
+    connection,
+    req.body,
+    req.user?.tenantID,
+    boardId,
+  );
   const message = "Task column created successfully.";
   res.status(httpStatus.CREATED).json({ taskColumn, message });
 });

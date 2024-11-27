@@ -3,9 +3,11 @@ import ApiError from "../utils/ApiError";
 import httpStatus from "http-status";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { valid } from "joi";
 
 interface Task {
   id?: string;
+  columnId?: string;
   tenantID?: string;
   user_id?: string;
   board_id?: string;
@@ -20,7 +22,7 @@ interface TaskColumn {
   id?: string;
   tenantID?: string;
   board_id?: string;
-  taskStatus?:  { name: string }[];
+  taskStatus?: { name: string }[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -91,9 +93,9 @@ const deleteTaskById = async (
 
 const createTaskColumn = async (
   connection: Knex,
-  taskColumn: { name: string }[],
+  taskColumn: { id: string; name: string }[],
   tenantID?: string,
-  boardID?: string
+  boardID?: string,
 ): Promise<TaskColumn[]> => {
   const existingRow = await connection("todoTaskColumn")
     .where("board_id", boardID)
@@ -101,17 +103,16 @@ const createTaskColumn = async (
 
   if (existingRow) {
     const existingTaskStatus = existingRow.taskStatus || [];
-const taskColumns = [taskColumn]
+    const taskColumns = [taskColumn];
     const updatedTaskStatus = [...existingTaskStatus, ...taskColumns];
 
     const [updatedResult] = await connection("todoTaskColumn")
       .where("board_id", boardID)
-      .update({taskStatus: JSON.stringify(updatedTaskStatus)})
+      .update({ taskStatus: JSON.stringify(updatedTaskStatus) })
       .returning("*");
 
     return updatedResult;
   } else {
-
     const taskColumnData: any = {
       taskStatus: JSON.stringify(Array.of(taskColumn)),
       tenantID: tenantID,
@@ -131,12 +132,14 @@ const getTaskColumns = async (
   connection: Knex,
   boardID: string,
 ): Promise<TaskColumn[]> => {
-  return await connection("todoTaskColumn").where({ board_id: boardID }).select("*");
+  return await connection("todoTaskColumn")
+    .where({ board_id: boardID })
+    .select("*");
 };
 
 const updateTaskOrder = async (
   connection: Knex,
-  boardId: string, 
+  boardId: string,
   orderedTasks: { taskId: string; order: number }[],
 ): Promise<Task[]> => {
   const updatedTasks: Task[] = [];
