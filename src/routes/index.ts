@@ -11,6 +11,7 @@ import reportRoute from "./reports.route"
 import checklistRoute from "./checklist.route"
 import taskRoute from "./task.route"
 import boardRoute from "./board.route"
+import commentRoute from "./taskComments.route"
 
 const router = express.Router();
 const defaultRoutes = [
@@ -61,6 +62,10 @@ const defaultRoutes = [
   {
     path: "/taskBoard",
     route: boardRoute,
+  },
+  {
+    path: "/taskComment",
+    route: commentRoute,
   },
 ];
 

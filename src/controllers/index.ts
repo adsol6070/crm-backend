@@ -10,3 +10,4 @@ export { default as reportsController } from "./reports.controller";
 export { default as checklistController } from "./checklist.controller";
 export { default as taskController } from "./task.controller";
 export { default as boardController } from "./board.controller";
+export { default as taskCommentController } from "./taskComments.controller";

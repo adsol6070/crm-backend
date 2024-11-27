@@ -14,3 +14,4 @@ export { default as reportService } from "./reports.service";
 export { default as checklistService } from "./checklist.service";
 export { default as taskService } from "./task.service";
 export { default as boardService } from "./board.service";
+export { default as taskCommentService } from "./taskComment.service";

@@ -18,9 +18,11 @@ export async function up(knex: Knex): Promise<void> {
       .references("id")
       .inTable("todoBoard")
       .onDelete("CASCADE");
+    table.uuid("columnId");
     table.string("taskStatus");
     table.string("taskTitle").notNullable();
     table.text("taskDescription");
+    table.jsonb("taskHistory");
     table.integer("order").notNullable().defaultTo(0);
     table.timestamps(true, true);
   });

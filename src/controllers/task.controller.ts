@@ -35,6 +35,7 @@ const updateTaskById = catchAsync(async (req: Request, res: Response) => {
     connection,
     taskId,
     updateTaskData,
+    req.user?.id,
   );
   if (updatedTask) {
     res.status(httpStatus.OK).send(updatedTask);
