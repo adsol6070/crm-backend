@@ -7,54 +7,68 @@ import { Permission } from "../config/permissions";
 const router = express.Router();
 
 router
-	.route("/:boardID")
-	.get(
-		auth("Task", Permission.READ),
-		connectionRequest,
-		taskController.getTasksByBoard,
-	)
-	.post(
-		auth("Task", Permission.CREATE),
-		connectionRequest,
-		taskController.createTask,
-	)
-
-router
-	.route("/taskColumn/:boardID")
-	.get(
-		auth("Task", Permission.READ),
-		connectionRequest,
-		taskController.getTasksColumns,
-	)
-	.post(
-		auth("Task", Permission.CREATE),
-		connectionRequest,
-		taskController.createTaskColumn,
-	)
+  .route("/:boardID")
+  .get(
+    auth("Task", Permission.READ),
+    connectionRequest,
+    taskController.getTasksByBoard,
+  )
+  .post(
+    auth("Task", Permission.CREATE),
+    connectionRequest,
+    taskController.createTask,
+  );
 
 router.patch(
-	"/order/:boardId",
-	auth(),
-	connectionRequest,
-	taskController.changeTaskOrder,
+  "/taskColumn/:boardID",
+  auth("Task", Permission.READ),
+  connectionRequest,
+  taskController.updateTaskColumnById,
 );
 
 router
-	.route("/:taskId")
-	.get(
-		auth("Task", Permission.READ),
-		connectionRequest,
-		taskController.getTaskById,
-	)
-	.patch(
-		auth("Task", Permission.UPDATE),
-		connectionRequest,
-		taskController.updateTaskById,
-	)
-	.delete(
-		auth("Task", Permission.DELETE),
-		connectionRequest,
-		taskController.deleteTaskById,
-	);
+  .route("/taskColumn/:boardID")
+  .get(
+    auth("Task", Permission.READ),
+    connectionRequest,
+    taskController.getTasksColumns,
+  )
+  .post(
+    auth("Task", Permission.CREATE),
+    connectionRequest,
+    taskController.createTaskColumn,
+  );
+
+router.patch(
+  "/order/:boardId",
+  auth(),
+  connectionRequest,
+  taskController.changeTaskOrder,
+);
+
+router.patch(
+  "/columnOrder/:boardId",
+  auth("Task", Permission.UPDATE),
+  connectionRequest,
+  taskController.updateColumnOrder,
+);
+
+router
+  .route("/:taskId")
+  .get(
+    auth("Task", Permission.READ),
+    connectionRequest,
+    taskController.getTaskById,
+  )
+  .patch(
+    auth("Task", Permission.UPDATE),
+    connectionRequest,
+    taskController.updateTaskById,
+  )
+  .delete(
+    auth("Task", Permission.DELETE),
+    connectionRequest,
+    taskController.deleteTaskById,
+  );
 
 export default router;

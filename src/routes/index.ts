@@ -6,11 +6,12 @@ import blogRoute from "./blog.route";
 import leadRoute from "./lead.route";
 import permissionsRoute from "./permissions.route";
 import chatRoute from "./chat.route";
-import scoreRoute from "./score.route"
-import reportRoute from "./reports.route"
-import checklistRoute from "./checklist.route"
-import taskRoute from "./task.route"
-import boardRoute from "./board.route"
+import scoreRoute from "./score.route";
+import reportRoute from "./reports.route";
+import checklistRoute from "./checklist.route";
+import taskRoute from "./task.route";
+import boardRoute from "./board.route";
+import commentRoute from "./taskComments.route";
 
 const router = express.Router();
 const defaultRoutes = [
@@ -61,6 +62,10 @@ const defaultRoutes = [
   {
     path: "/taskBoard",
     route: boardRoute,
+  },
+  {
+    path: "/taskComment",
+    route: commentRoute,
   },
 ];
 

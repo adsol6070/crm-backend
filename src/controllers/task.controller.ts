@@ -40,6 +40,7 @@ const updateTaskById = catchAsync(async (req: Request, res: Response) => {
     connection,
     taskId,
     updateTaskData,
+    req.user?.id,
   );
   if (updatedTask) {
     res.status(httpStatus.OK).send(updatedTask);
@@ -73,6 +74,55 @@ const getTasksColumns = catchAsync(async (req: Request, res: Response) => {
   const boardId = req.params.boardID;
   const taskColumns = await taskService.getTaskColumns(connection, boardId);
   res.status(httpStatus.OK).json(taskColumns);
+});
+
+const updateTaskColumnById = catchAsync(async (req: Request, res: Response) => {
+  const connection = await connectionService.getCurrentTenantKnex();
+  const boardID = req.params.boardID;
+  const updateData = req.body;
+
+  const updatedTaskColumn = await taskService.updateTaskColumnById(
+    connection,
+    boardID,
+    updateData,
+  );
+
+  if (!updatedTaskColumn) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Task column not found");
+  }
+
+  res
+    .status(httpStatus.OK)
+    .json({ updatedTaskColumn, message: "Task column updated successfully" });
+});
+
+const updateColumnOrder = catchAsync(async (req: Request, res: Response) => {
+  const { orderedColumns } = req.body;
+  const boardID = req.params.boardId;
+
+  if (!Array.isArray(orderedColumns) || orderedColumns.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid ordered columns data");
+  }
+
+  orderedColumns.forEach((item: any) => {
+    if (!item.columnId || typeof item.order !== "number") {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Invalid columnId or order in array",
+      );
+    }
+  });
+
+  const connection = await connectionService.getCurrentTenantKnex();
+  const updatedColumns = await taskService.updateColumnOrder(
+    connection,
+    boardID,
+    orderedColumns,
+  );
+
+  res
+    .status(httpStatus.OK)
+    .json({ updatedColumns, message: "Column order updated successfully." });
 });
 
 const changeTaskOrder = catchAsync(async (req: Request, res: Response) => {
@@ -115,4 +165,6 @@ export default {
   createTaskColumn,
   getTasksColumns,
   changeTaskOrder,
+  updateTaskColumnById,
+  updateColumnOrder,
 };

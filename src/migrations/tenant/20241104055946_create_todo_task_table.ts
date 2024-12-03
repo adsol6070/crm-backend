@@ -22,6 +22,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string("taskStatus");
     table.string("taskTitle").notNullable();
     table.text("taskDescription");
+    table.jsonb("taskHistory");
     table.integer("order").notNullable().defaultTo(0);
     table.timestamps(true, true);
   });
